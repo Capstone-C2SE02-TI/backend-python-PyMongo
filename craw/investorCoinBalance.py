@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import json
+import concurrent.futures
+
 
 investorDocs = client['investors']
 metadataDocs = client['metadatas']
@@ -16,6 +18,7 @@ ets_keys = [key.strip() for key in ets_keys.split(',')]
 
 alchemy_keys = os.environ['alchemy_keys']
 alchemy_keys = [key.strip() for key in alchemy_keys.split(',')]
+alchemy_keys = alchemy_keys*10000
 
 # TODO Change the name later, it not dict
 def getERC20AddressIn(contractAddresses):
@@ -83,87 +86,83 @@ def convertDecimal(value, decimalFrom, decimalTo = 0):
 
    return float(value) / 10**(decimalFrom - decimalTo)
 
-def getInvestorsERC20Balance(investorAddress, ERC20address, ets_key):
+# def getInvestorsERC20Balance(investorAddress, ERC20address, ets_key):
 
-    time.sleep(0.5)
+#     time.sleep(0.5)
 
-    try:
-        balancesResult = requests.get(f'https://api.etherscan.io/api'
-                                '?module=account'
-                                '&action=tokenbalance'
-                                f'&contractaddress={ERC20address}'
-                                f'&address={investorAddress}'
-                                '&tag=latest'
-                                f'&apikey={ets_key}',
-                                timeout = 5
-        )
-    except:
-        print(f'get {ERC20address} balance of {investorAddress} run out of time')
-        return 0
+#     try:
+#         balancesResult = requests.get(f'https://api.etherscan.io/api'
+#                                 '?module=account'
+#                                 '&action=tokenbalance'
+#                                 f'&contractaddress={ERC20address}'
+#                                 f'&address={investorAddress}'
+#                                 '&tag=latest'
+#                                 f'&apikey={ets_key}',
+#                                 timeout = 5
+#         )
+#     except:
+#         print(f'get {ERC20address} balance of {investorAddress} run out of time')
+#         return 0
 
-    try:
-        balancesResult = balancesResult.json()
-        balancesResult = balancesResult['result']
-    except:
-        print(f'get {ERC20address} balance of {investorAddress} get error in return api')
-        print(balancesResult)
+#     try:
+#         balancesResult = balancesResult.json()
+#         balancesResult = balancesResult['result']
+#     except:
+#         print(f'get {ERC20address} balance of {investorAddress} get error in return api')
+#         print(balancesResult)
 
-    return balancesResult
+#     return balancesResult
 
+# def updateInvestorERC20Balances():
 
+#     count = 0
 
+#     for investorDoc in investorDocs.find():
+#         investorAddress = investorDoc['_id']
 
-
-
-    
-def updateInvestorERC20Balances():
-
-    count = 0
-
-    for investorDoc in investorDocs.find():
-        investorAddress = investorDoc['_id']
-
-        print(f'Processing {investorAddress}')
+#         print(f'Processing {investorAddress}')
       
-        for metadataDoc in metadataDocs.find({'category' : 'token'}):
+#         for metadataDoc in metadataDocs.find({'category' : 'token'}):
 
 
-            erc20Symbol = metadataDoc['symbol']
-            print(f'Processing {investorAddress}: getting {erc20Symbol} balance')
+#             erc20Symbol = metadataDoc['symbol']
+#             print(f'Processing {investorAddress}: getting {erc20Symbol} balance')
 
-            count += 1
+#             count += 1
 
-            # Replace key for better performance
-            ets_key = ets_keys[count % len(ets_keys)]
+#             # Replace key for better performance
+#             ets_key = ets_keys[count % len(ets_keys)]
 
-            contractAddresses = metadataDoc['contract_address']
-            erc20Address = getERC20AddressIn(contractAddresses)
+#             contractAddresses = metadataDoc['contract_address']
+#             erc20Address = getERC20AddressIn(contractAddresses)
 
-            ERC20Balance = getInvestorsERC20Balance(investorAddress, erc20Address, ets_key)
+#             ERC20Balance = getInvestorsERC20Balance(investorAddress, erc20Address, ets_key)
 
-            if ERC20Balance == '0':
-                print(f'{erc20Symbol} balance of {investorAddress} : 0')
+#             if ERC20Balance == '0':
+#                 print(f'{erc20Symbol} balance of {investorAddress} : 0')
 
-                continue
+#                 continue
 
          
-            erc20Decimal = metadataDoc['decimal']
-            standardERC20Balance = convertDecimal(ERC20Balance,erc20Decimal)
+#             erc20Decimal = metadataDoc['decimal']
+#             standardERC20Balance = convertDecimal(ERC20Balance,erc20Decimal)
 
-            try:
-                investorDocs.update_one(
-                    {'_id' : investorAddress},
-                    {'$set' : {f'coins.{erc20Symbol}' : float(standardERC20Balance)}}
-                )
-            except:
-                print(f'{investorAddress} got {erc20Symbol}:{contractAddresses} balance error in {ERC20Balance} ')
+#             try:
+#                 investorDocs.update_one(
+#                     {'_id' : investorAddress},
+#                     {'$set' : {f'coins.{erc20Symbol}' : float(standardERC20Balance)}}
+#                 )
+#             except:
+#                 print(f'{investorAddress} got {erc20Symbol}:{contractAddresses} balance error in {ERC20Balance} ')
 
             
-            print(f'update {erc20Symbol} balance of {investorAddress} : {standardERC20Balance}')
+#             print(f'update {erc20Symbol} balance of {investorAddress} : {standardERC20Balance}')
 
-
+stt = 0
 def getInvestorsERC20Balance(investorAddress, contractAddresses,alchemy_key):
-
+    global stt
+    stt += 1
+    # print(stt,investorAddress)
     time.sleep(0.5)
 
     headers = {
@@ -192,6 +191,7 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses,alchemy_key):
     return balancesResult
 
 def updateInvestorERC20Balances(test):
+    t1 = time.perf_counter()
 
     contractAddresses,symbols,decimals = [],[],[]
     for tokenDoc in tokenDocs.find():
@@ -206,28 +206,33 @@ def updateInvestorERC20Balances(test):
     
 
     count = 0
+    updateCount = 0
+    investorAddresses = [investorDoc['_id'] for investorDoc in investorDocs.find({},{'TXs' : 0})]
 
-    for investorDoc in investorDocs.find():
-        investorAddress = investorDoc['_id']
-        count += 1
-        alchemy_key = alchemy_keys[count % len(alchemy_keys)]
-        print(f'Crawling erc20 balances of {investorAddress}')
-        for symbolsChunk,contractAddressesChunk,decimalChunk in zip(symbols,contractAddresses,decimals):
+    for symbolsChunk,contractAddressesChunk,decimalChunk in zip(symbols,contractAddresses,decimals):
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+            MultiBalanceResults = [executor.submit(getInvestorsERC20Balance,investorAddress,contractAddressesChunk,alchemy_key) 
+                    for investorAddress,alchemy_key in zip(investorAddresses,alchemy_keys)]
 
-            balancesResult = getInvestorsERC20Balance(investorAddress,contractAddressesChunk,alchemy_key)
-            
+        # balanceResults = getInvestorsERC20Balance(investorAddress,contractAddressesChunk,alchemy_key)
+        
+        
+        # TODO Get symbol to update
+
+        for investorAddress,balanceResults in zip(investorAddresses,concurrent.futures.as_completed(MultiBalanceResults)):
+
             coinBalances = {}
-            
-            # TODO Get symbol to update
-            for symbol,contractAddressReq, balanceResult,decimal in zip(symbolsChunk,contractAddressesChunk,balancesResult,decimalChunk):
+            for symbol,contractAddressReq, balanceResult,decimal in zip(symbolsChunk,contractAddressesChunk,balanceResults.result(),decimalChunk):
                 contractAddressRes, hexBalance = balanceResult.values()
                 # TODO Get token decimal()
                 standardDecimalBalance = convertDecimal(int(hexBalance,16),decimal)
 
-                if standardDecimalBalance == 0.0:
+                if standardDecimalBalance == 0.0 or standardDecimalBalance == 0:
                     continue
                 
-                print(symbol,contractAddressReq,decimal,standardDecimalBalance)
+                if investorAddress == '0xb29380ffc20696729b7ab8d093fa1e2ec14dfe2b':
+                    print("Balance",symbol,contractAddressReq,decimal,standardDecimalBalance)
 
                 # investorDocs.update_one(
                 #     {'_id' : investorAddress},
@@ -236,16 +241,22 @@ def updateInvestorERC20Balances(test):
                 # )
 
                 coinBalances[f'coins.{symbol}'] = standardDecimalBalance
+
             investorDocs.update_one(
                     {'_id' : investorAddress},
                     {'$set' : coinBalances}
 
-            )    
+            )
+            updateCount += 1
+            # print("update Statement",updateCount,investorAddress)
+            
+        
+            # NOTE For validate contract order and symbol order
+            # if contractAddressReq != contractAddressRes or symbol != symbolTest:
+            #     print('error')
+    t2 = time.perf_counter()
 
-                
-                # NOTE For validate contract order and symbol order
-                # if contractAddressReq != contractAddressRes or symbol != symbolTest:
-                #     print('error')
+    print(f'Finished in {t2-t1} seconds')
 
             
 

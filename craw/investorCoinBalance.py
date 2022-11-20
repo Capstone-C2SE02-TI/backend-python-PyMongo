@@ -23,36 +23,6 @@ alchemy_keys = alchemy_keys * 10000
 # TODO Change the name later, it not dict
 
 
-def getERC20AddressIn(contractAddresses):
-
-    erc20Address = None
-
-    for contractAddressPlatform in contractAddresses:
-
-        if 'ETH' == contractAddressPlatform['platform']['coin']['symbol']:
-            erc20Address = contractAddressPlatform['contract_address']
-
-            break
-
-    if erc20Address is None:
-        raise Exception('Null erc20 address')
-
-    return erc20Address
-
-
-def crawlSharkWaller(pages):
-
-    # Using slug to get the url
-    # sharkUrlPage = sharkUrl + str(pages)
-
-    # html = requests.get(sharkUrlPage)
-    # soup = BeautifulSoup(html.text,'html.parser')
-
-    # table = soup.select_one('table.table')
-
-    print(3)
-
-
 def getWalletsETHBalance(wallets, ets_key):
 
     wallets = ','.join(wallets)
@@ -167,7 +137,6 @@ def updateInvestorERC20Balances():
         with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
             multiBalanceResults = [executor.submit(getInvestorsERC20Balance, investorAddress, contractAddressesChunk, alchemy_key)
                                    for investorAddress, alchemy_key in zip(investorAddresses, alchemy_keys)]
-        # balancesResult = getInvestorsERC20Balance(investorAddress,contractAddressesChunk,alchemy_key)
 
         waiTest = concurrent.futures.wait(
             multiBalanceResults, return_when="ALL_COMPLETED")

@@ -101,7 +101,7 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses,alchemy_key):
             "method": "alchemy_getTokenBalances",
             'params': [investorAddress, contractAddresses]
     }
-
+ a
     # with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor2:
 
     #     try:

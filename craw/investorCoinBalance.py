@@ -166,7 +166,7 @@ def updateInvestorERC20Balances():
                 standardDecimalBalance = convertDecimal(
                     int(hexBalance, 16), decimal)
 
-                if standardDecimalBalance == 0.0:
+                if standardDecimalBalance == 0.0 or standardDecimalBalance == 0:
                     continue
 
                 coinBalances[f'coins.{symbol}'] = standardDecimalBalance

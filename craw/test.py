@@ -1,52 +1,19 @@
-a = [1,2,3]
 
-print(a*2)
-from mongoDB_init import client
-import json
-investorDocs = client['investors']
-testDocs = client['test']
-totalTX = 0
-totalShark = 0
+# from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
-count = 0
+arr = [2,1,3]
 
-for t in investorDocs.find({}, {'TXs' : 0}):
-    print(count)
-    count += 1
-# investorDocs.delete_many(
-#     {'TXs.8888' : {'$exists' : True}},
-# )
-# for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : False}}):
+# arr.sort()
 
+# print(arr)
+def ti(b, c = 0, d = 0):
+    print(b,c,d)
 
-#     # print(investorDoc['_id'], len(investorDoc['TXs']))
-#     # totalTX += len(investorDoc['TXs'])
-#     # print(investorDoc['_id'], )
-#     totalTX += len(investorDoc['TXs'])
-#     totalShark += 1
+with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    fs = [executor.submit(ti,ar,c=3) for ar in arr]
 
-# print(f'Total {totalTX}, {totalShark} sharks ')
+    a = concurrent.futures.wait(fs,return_when="ALL_COMPLETED")
 
-# for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : False}}):
-#     print(investorDoc['_id'])
-#     # print(investorDoc['TXs'][-1]['blockNumber'])
+print(a.not_done.__len__()) 
     
-#     investorDocs.update_one(
-#         {'_id' : investorDoc['_id']},
-#         {'$set' : {'latestBlockNumber' :    13916649}}
-#     )
-
-
-    # before = 0
-    # after = 0
-    # investorAddress = investorDoc['_id']
-    # print(f'processing {investorAddress}')
-    # for TXs in investorDoc['TXs']:
-    #     after = int(TXs['timeStamp'])
-
-    #     if after < before:
-    #         print(f'{investorAddress}Not in order')
-    #         break
-    #     print(before,'->',after)
-    #     before = after
-    # # break

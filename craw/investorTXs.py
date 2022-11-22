@@ -126,16 +126,7 @@ def updateInvestorTXs2(runTimes, timeGap):
 
     newLatestBlock = curBlock
 
-    # testt = 0
-    # count = 0
-    # for latestBlock,ets_key,investorAddress in zip(latestBlocks,ets_keys,investorAddresses):
-
-    #     if testt == 0:
-    #         testt = latestBlock
-    #     else:
-    #         if latestBlock != testt:
-    #             count += 1
-    #             print(count,testt,latestBlock,investorAddress)
+    
 
     for investorAddress, result in zip(investorAddresses, concurrent.futures.as_completed(results)):
 

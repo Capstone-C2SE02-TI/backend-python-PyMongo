@@ -33,3 +33,16 @@ tokenDocs.update_one(
 
 symbolTest = metadataDocs.find_one({'contract_address.contract_address' : { '$eq' : contractAddressReq}})
 
+
+# CMC to CGC FlOW
+# CMC TOKEN SORT BY MARKETCAP IN ETH
+TOKENADDRESSES = []
+TOKENADDRESSES 
+CGC_API = f'coins/ethereum/contract/{TOKENADDRESS}' # FOR TOKENADDRESS IN TOKENADDRESSES
+# CALL CGC_API with TOKENADDRESSES => TOKENID[]
+# TOKENID[] CAN BE USE IN CGC API
+TOKENID[] => CGC API : coins/{TOKENID} => DATA => ADDDATA TO MONGODB
+
+
+# CGC PRICE FOLLOW
+CGC API : 'coins/{TokenId}/market_chart/range?vs_currency=usd&from={from}&to={to}'

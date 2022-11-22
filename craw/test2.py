@@ -10,8 +10,8 @@ investorDocs = client['investors']
 
 
 investorDocs.update_many(
-    {},
-    {'$set' : {'coins' : {}}}
+    {'_id' : '0x189B9cBd4AfF470aF2C0102f365FC1823d857965'},
+    {'$set' : {'coins.TEST' : 3000}}
 )
 # investorAddresses = [investorDoc['_id'] for investorDoc in investorDocs.find({},{'TXs' : 0})]
 

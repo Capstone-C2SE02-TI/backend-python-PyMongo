@@ -129,11 +129,12 @@ def updateInvestorERC20Balances():
 
     investorAddresses = [investorDoc['_id']
                          for investorDoc in investorDocs.find({}, {'TXs': 0})]
+    
     # investorAddresses = investorAddresses[:15]
     investorAddresses.sort(key=str.lower)
 
+    balanceUpdated = {}
     for symbolsChunk, contractAddressesChunk, decimalChunk in zip(symbols, contractAddresses, decimals):
-
         with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
             multiBalanceResults = [executor.submit(getInvestorsERC20Balance, investorAddress, contractAddressesChunk, alchemy_key)
                                    for investorAddress, alchemy_key in zip(investorAddresses, alchemy_keys)]
@@ -153,6 +154,8 @@ def updateInvestorERC20Balances():
      
         print(len(investorAddresses) == len(multiBalanceResults),
               len(investorAddresses), len(multiBalanceResults))
+        
+        
         for investorAddress, balanceResults in zip(investorAddresses, multiBalanceResults):
             if investorAddress.lower() != balanceResults['address'].lower():
                 print('different Address between input and output')
@@ -160,6 +163,7 @@ def updateInvestorERC20Balances():
                 break
 
             coinBalances = {}
+            
             for symbol, contractAddressReq, balanceResult, decimal in zip(symbolsChunk, contractAddressesChunk, balanceResults['tokenBalances'], decimalChunk):
                 contractAddressRes, hexBalance = balanceResult.values()
 
@@ -176,11 +180,21 @@ def updateInvestorERC20Balances():
             
             updateCount += 1
 
+
+           
             
-            investorDocs.update_one(
-                {'_id': investorAddress},
-                [{'$set': coinBalances}]
-            )
+            if investorAddress not in balanceUpdated:
+                investorDocs.update_one(
+                    {'_id': investorAddress},
+                    [{'$set': {'coins' : {'$literal': {}}}},{'$set': coinBalances}]
+                )
+
+                balanceUpdated[investorAddress] = True
+            else:
+                investorDocs.update_one(
+                    {'_id': investorAddress},
+                    {'$set': coinBalances}
+                )
 
             print(f'Update No.{updateCount} success.', investorAddress)
 

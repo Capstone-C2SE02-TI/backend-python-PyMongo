@@ -35,14 +35,14 @@ symbolTest = metadataDocs.find_one({'contract_address.contract_address' : { '$eq
 
 
 # CMC to CGC FlOW
-# CMC TOKEN SORT BY MARKETCAP IN ETH
+# CMC TOKEN SORT BY MARKETCAP IN ETH : 
+CMC_ListingLatest_API = 'v1/cryptocurrency/listings/latest'
 TOKENADDRESSES = []
-TOKENADDRESSES 
 CGC_API = f'coins/ethereum/contract/{TOKENADDRESS}' # FOR TOKENADDRESS IN TOKENADDRESSES
 # CALL CGC_API with TOKENADDRESSES => TOKENID[]
 # TOKENID[] CAN BE USE IN CGC API
-TOKENID[] => CGC API : coins/{TOKENID} => DATA => ADDDATA TO MONGODB
+TOKENID = CGC API : coins/{TOKENID} => DATA => ADDDATA TO MONGODB
 
 
 # CGC PRICE FOLLOW
-CGC API : 'coins/{TokenId}/market_chart/range?vs_currency=usd&from={from}&to={to}'
+CGC API = f'coins/{TokenId}/market_chart/range?vs_currency=usd&from={from}&to={to}'

@@ -1,21 +1,10 @@
-from mongoDB_init import client
+from dotenv import load_dotenv
+import os
 import time
+load_dotenv()
 
-investorDocs = client['investors']
+ets_keys = os.environ['ets_keys']
+ets_keys = [i.strip() for i in ets_keys.split(',')]
+ets_keys = ets_keys*10000
 
-# investorDocs.update_many(
-#     {},
-#     {'$set' : {'TXs' : []}}
-# )
-
-
-investorDocs.update_many(
-    {'_id' : '0x189B9cBd4AfF470aF2C0102f365FC1823d857965'},
-    {'$set' : {'coins.TEST' : 3000}}
-)
-# investorAddresses = [investorDoc['_id'] for investorDoc in investorDocs.find({},{'TXs' : 0})]
-
-# b = [1,2,3]
-# for investorAddress,a in zip(investorAddresses,b):
-#     print(investorAddress)
-#     time.sleep(0.1)
+print(ets_keys[:10])

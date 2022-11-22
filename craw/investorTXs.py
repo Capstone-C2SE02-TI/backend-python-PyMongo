@@ -23,7 +23,10 @@ def getCurBlock(infura_key):
     
     return curBlock
 
-# NOTE Cur using startBlock = curBlock - 10000
+
+def handleFutureRequest(startBlock, curBlock, ets_key, investorAddress):
+    print(3)
+
 def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
 
     pages = 1
@@ -37,12 +40,13 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
             'sort=asc&'
             f'apikey={ets_key}')
     # print(newTXs.json())
-    if 'result' in newTXs.json():
-        newTXs = newTXs.json()['result']
+    if newTXs.json()['status'] == '1':
+        newTXs = newTXs.json()
+        newTXs['investorAddress'] = investorAddress
     else:
+        print(f'Dont have result in {investorAddress} TXs:')
         print(newTXs.json())
-        time.sleep(1)
-        return []
+        return {}
 
     print(f'Crawling new TXs of {investorAddress} successfully')
     return newTXs
@@ -54,53 +58,28 @@ def resetInvestorTXs():
         {},
         { '$set' : {'TXs' : []}}
     )
-        
 
-def updateInvestorTXs(runTimes, timeGap):
+def setLatestBlockNumber(blockNum = 13919833):
 
-    infura_key = infura_keys[runTimes % len (infura_keys)]
-    curBlock = getCurBlock(infura_key)
+    investorDocs.update_many(
+        {},
+        { '$set' : {'latestBlockNumber' : blockNum}}
+    )
 
+
+def isFuturesWork():
     
-    count = 0
-    print(f'crawAllTokenTXs {runTimes}')
+    for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : True}}):
 
-    for investor in investorDocs.find():
-        count += 1
-        ets_key = ets_keys[count % len (ets_keys)]
-
-        investorAddress = investor['_id']
-
-       
-        print(f'Processing {investorAddress}')
+        investorAddress = investorDoc['_id'].lower()
+        firstTX = investorDoc['TXs'][0]
         
+        FromAddress = firstTX['from'].lower()
+        ToAddress = firstTX['to'].lower()
 
-
-        oldLatestBlock = investor['latestBlockNumber']
-        newTXs = getInvestorTXs(oldLatestBlock,curBlock, ets_key, investorAddress)
-        
-
-        newLatestBlock = curBlock
-
-        print(f'Updating TXs of {investorAddress}') 
-        investorDocs.update_one(
-            {'_id' : investorAddress},
-            { 
-                '$push':{ 
-                    'TXs': { 
-                            '$each': newTXs
-                        } 
-                },
-                '$set':{
-                    'latestBlockNumber' : newLatestBlock
-                } 
-            }
-        )
-
-        
-        print(f'Updated TXs of {investorAddress} successfully')
-
-    runTimes += 1
+        if (investorAddress not in FromAddress) and (investorAddress not in ToAddress):
+            print('Future not working in TXs')
+            return
 
     
 def updateInvestorTXs2(runTimes, timeGap):
@@ -118,7 +97,7 @@ def updateInvestorTXs2(runTimes, timeGap):
 
 
     try:
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=14) as executor:
             results = [executor.submit(getInvestorTXs,latestBlock,curBlock,ets_key,investorAddress) 
                     for latestBlock,ets_key,investorAddress in zip(latestBlocks,ets_keys,investorAddresses)]
     except:
@@ -126,17 +105,29 @@ def updateInvestorTXs2(runTimes, timeGap):
 
     newLatestBlock = curBlock
 
-    
+    waiTest = concurrent.futures.wait(
+            results, return_when="ALL_COMPLETED")
 
-    for investorAddress, result in zip(investorAddresses, concurrent.futures.as_completed(results)):
+    if waiTest.not_done.__len__() != 0:
+        print("All the futures not done yet!")
+        return
 
+    for response in concurrent.futures.as_completed(results):
+        
+
+        
         try:
+            if response.result().get('result',[]) == []:
+                continue;
+
+            investorAddress = response.result()['investorAddress']
+
             investorDocs.update_one(
                 {'_id' : investorAddress},
                 { 
                     '$push':{ 
                         'TXs': { 
-                                '$each': result.result()
+                                '$each': response.result()['result']
                             } 
                     },
                     '$set':{
@@ -146,7 +137,7 @@ def updateInvestorTXs2(runTimes, timeGap):
             )
         except:
             print(f'Update TXs fail in {investorAddress}')
-            print(result.result())
+            print(response.result())
             break
         print(f'Update TXs success in {investorAddress}')
 
@@ -157,5 +148,10 @@ def updateInvestorTXs2(runTimes, timeGap):
 
 
 # resetInvestorTXs()
-updateInvestorTXs2(0,0)
+# setLatestBlockNumber()
+# updateInvestorTXs2(0,0)
+# isFuturesWork()
 
+for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : 0}}):
+    print(investorDoc['_id'])
+    print(investorDoc['TXs'])

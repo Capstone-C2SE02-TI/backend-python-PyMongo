@@ -70,9 +70,9 @@ def getCoinData(cgcId):
         'localization' : False,
         'tickers' : False,
         'market_data' : True,
-        'community_data' : True,
-        'developer_data' : True,
-        'sparkline' : True
+        'community_data' : False,
+        'developer_data' : False,
+        'sparkline' : False
 
     }
     APIURL = f'https://api.coingecko.com/api/v3/coins/{cgcId}'
@@ -126,3 +126,6 @@ def coinDataHandler():
 # crawTokenCGCID()
 # updateTokenInfo(0)
 coinDataHandler()
+
+
+

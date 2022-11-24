@@ -45,7 +45,7 @@ def crawTokenCGCID():
                 print('Next time sleep for 70 Secs')
                 print(response.json())
                 continue
-
+                
             cgcId = response.json()['id']
 
             coinTestDocs.update_one(

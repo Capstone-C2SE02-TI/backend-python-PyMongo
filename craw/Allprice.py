@@ -1,114 +1,98 @@
-from heapq import merge
-from requests import Session
+import requests
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
 from mongoDB_init import client
 import time
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 
-coinDocs = client['coins']
-tokenDocs = client['tokens']
-metadataDocs = client['metadatas']
-idsConvert = json.load( open('./id-CMCToCGC.json'))
+coinTestDocs = client['tokensTest']
 
 
-# NOTE If hourly , days only 90
-parameters = {
-    'vs_currency' : 'usd',
-    'days' : 'max'
-}
-headers = {
-    'Accepts': 'application/json'
-}
 
-session = Session()
-session.headers.update(headers)
 
-def initPricesField(id):
 
-    havePricesDoc = metadataDocs.find({'prices' : { '$exists' : False}})
 
-    for doc in havePricesDoc:
-        print(doc['_id'])
+def initPricesField():
+
+    coinTestDocs.update_many(
+        {},
+        {'$set' : {
+            'prices' : {
+                'daily' : {},
+                'hourly' : {},
+                'minutely' : {}
+            }
+            }
+        }
+    )
     
    
 
     
-def crawlCoinPrice(id, interval, symbol):
-    time.sleep(2)
-    parameters['interval'] = interval
+def getCoinPrice(cgcId, interval, days):
 
-    if id in idsConvert['data']:
-        requestId = idsConvert['data'][id]
-    else:
-        requestId = id
+    parameters = {
+        'vs_currency' : 'usd',
+        'days' : days,
+        'interval' : interval
+    }
 
-
-    try:
-        response = session.get(f'https://api.coingecko.com/api/v3/coins/{requestId}/market_chart', params=parameters, timeout=5)
-    except:
-        print(f'Timeout for {requestId}')
-        return False
-
-    data = json.loads(response.text)
-
-    if 'error' in data:
-        print(f'Dont have price in {requestId}')
-        return False
-
-    try:
-        prices = data['prices']
-        print(f'Crawl {requestId} price')
-    except:
-        print(f'This shit {requestId} gone wrong')
-        print(data)
-        return False
     
-    for price in prices:
-        unix, intervalPrice = price
-        # TODO Change here
-        updateStatus = metadataDocs.update_one(
-                    {'_id' : symbol},
-                    {'$set': {f'prices.{interval}.{unix}' : intervalPrice} }
-                )
-        print(f'add {symbol} data => {unix} : {intervalPrice} ')
-    return True
+    statusCode = -1
+    while statusCode != 200:
+
+        response = requests.get(f'https://api.coingecko.com/api/v3/coins/{cgcId}/market_chart', params=parameters)
+
+        statusCode = response.status_code
+        if statusCode == 404:
+            print(f'Dont have price for {cgcId}')
+            return []
+
+        if statusCode != 200:
+            print('Now sleep for 70 Secs')
+            print(response.json())
+            time.sleep(65)
+            continue
 
 
 
-def crawlAllCoinPrice():
+    return response.json()['prices']
 
-    c = 0
-    f = 0
 
-    # for coinDoc in coinDocs.find():
-    #     c += 1
-    #     f += (crawlCoinPrice(coinDoc['_id'], 'daily', coinDoc['symbol']) == False)
 
-    print('now is get token docs')
+def coinPriceHandler():
 
-    # TODO Prices token fail ~50%
-    
-    tokenSlugs = []
-    tokenSymbols = []
-    for tokenDoc in tokenDocs.find():
+    for coinDoc in coinTestDocs.find({}, {'cgcId': 1}):
         
-        tokenSlugs.append(tokenDoc['slug'])
-        tokenSymbols.append(tokenDoc['symbol'])
-        
-    for tokenSlug,tokenSymbol in zip(tokenSlugs,tokenSymbols):
-        c += 1
-        isCrawlSuccess = crawlCoinPrice(tokenSlug, 'hourly', tokenSymbol)
-        f += isCrawlSuccess
+        coinId = coinDoc['cgcId']
+
+        interval = 'daily'
+        days = 'max'
+
+        print(f'Getting price for {coinId}')
+        coinPrice = getCoinPrice(coinId,interval,days)
+        priceUpdate = {}
+
+        for miliUnix,price in coinPrice:
+            secondUnix = int(miliUnix / 1000)
+             
+            priceUpdate[f'{interval}.{secondUnix}'] = price
+
+        coinTestDocs.update_one(
+            {'cgcId' : coinId},
+            {'$set' : priceUpdate}
+        )
+
+        print(f'Get price success for {coinId}')
+
+        time.sleep(5)
 
 
-    print(float((c-f)/c))
-
-
-# crawlCoinPrice('ethereum','daily')
-crawlAllCoinPrice()
-# crawlCoinPrice('polkadot','daily','DOT')
+coinPriceHandler()
+# for unix,price in getCoinPrice('bitcoin','minutely','1','abc')['prices']:
+#     ts = int(unix/1000)
+#     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)
 
         
 

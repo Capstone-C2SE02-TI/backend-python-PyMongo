@@ -24,9 +24,6 @@ def getCurBlock(infura_key):
     return curBlock
 
 
-def handleFutureRequest(startBlock, curBlock, ets_key, investorAddress):
-    print(3)
-
 def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
 
     pages = 1
@@ -114,11 +111,9 @@ def updateInvestorTXs2(runTimes, timeGap):
 
     for response in concurrent.futures.as_completed(results):
         
-
-        
         try:
             if response.result().get('result',[]) == []:
-                continue;
+                continue
 
             investorAddress = response.result()['investorAddress']
 
@@ -146,12 +141,21 @@ def updateInvestorTXs2(runTimes, timeGap):
 
 
 
-
+fileName = os.path.basename(__file__)
+start = time.time()
 # resetInvestorTXs()
-# setLatestBlockNumber()
-# updateInvestorTXs2(0,0)
+# setLatestBlockNumber(15426981)
+updateInvestorTXs2(0,0)
+end = time.time()
+print(int(end - start), f'sec to process {fileName}')
 # isFuturesWork()
 
-for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : 0}}):
-    print(investorDoc['_id'])
-    print(investorDoc['TXs'])
+# investorDocs.delete_many(
+#     {'TXs.0' : {'$exists' : 0}}
+# )
+# for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : 0}}):
+#     print(investorDoc['_id'])
+#     print(investorDoc['TXs'])
+
+    
+

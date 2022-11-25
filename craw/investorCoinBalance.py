@@ -14,6 +14,7 @@ coinTestDocs = client['tokensTest']
 
 ets_keys = os.environ['ets_keys']
 ets_keys = [key.strip() for key in ets_keys.split(',')]
+ets_keys = ets_keys * 1000
 
 alchemy_keys = os.environ['alchemy_keys']
 alchemy_keys = [key.strip() for key in alchemy_keys.split(',')]
@@ -34,24 +35,47 @@ def getWalletsETHBalance(wallets, ets_key):
                                   )
 
     balancesResult = balancesResult.json()
-    balancesResult = balancesResult['result']
     return balancesResult
 
 
-def updateWalletETHBalances(wallets, runTimes):
+def updateInvestorETHBalances():
+    chunkSize = 20
 
-    ETHBalancesResult = getWalletsETHBalance(
-        wallets, ets_keys[runTimes % len(ets_keys)])
+    investorAddresses = [investorDoc['_id']
+                         for investorDoc in investorDocs.find({}, {'_id': 1})]
+    investorAddresses = [investorAddresses[i:i + chunkSize]
+                         for i in range(0, len(investorAddresses), chunkSize)]
+    print(len(investorAddresses))
+                    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        multiETHBalanceResults = [
+            executor.submit(
+                getWalletsETHBalance, 
+                investorAddress,
+                ets_key
+            )
+            for investorAddress, ets_key in zip(investorAddresses, ets_keys)
+        ]
+    multiETHBalanceResults = [ethBalanceResults.result() 
+                               for ethBalanceResults in concurrent.futures.as_completed(multiETHBalanceResults)]
 
-    for balanceResult in ETHBalancesResult:
+    fractionDigits = 5
+    countTest = 0
+    for ETHBalanceResults in multiETHBalanceResults:
+        countTest += 1
+        print(countTest*len(ETHBalanceResults['result']))
+        for ETHBalanceResult in ETHBalanceResults['result']:
+            investorAddress = ETHBalanceResult['account']
+            if len(ETHBalanceResult['balance']) <= 13:
+                continue
+            
+            ETHBalance = float(ETHBalanceResult['balance'][:-13])/(10**fractionDigits)
+            investorDocs.update_one(
+                {'_id' : investorAddress},
+                {'$set' : {'coins.eth' : ETHBalance} }
+            )    
 
-        address = balanceResult['account']
-        balance = balanceResult['balance']
-
-        investorDocs.update_one(
-            {'_id': address},
-            {'$set': {'coins': {'ETH': int(balance[:-18])}}}
-        )
+            # print(f'Update ETH Balance : {ETHBalance} success for {investorAddress}')
 
 
 def convertDecimal(value, decimalFrom, decimalTo=0):
@@ -72,15 +96,6 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
         "method": "alchemy_getTokenBalances",
         'params': [investorAddress, contractAddresses]
     }
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor2:
-
-    #     try:
-    #         f = executor2.submit(requests.post,url = f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}',timeout = 5, json=payload, headers=headers)
-    #         # response = requests.post(f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}',timeout = 5, json=payload, headers=headers)
-    #         response = f.result()
-    #     except:
-    #         print(f'get {investorAddress} balance run out of time')
-    #         return 0
 
     try:
         response = requests.post(
@@ -200,5 +215,10 @@ def updateInvestorERC20Balances():
             print(f'Update No.{updateCount} success.', investorAddress)
 
 
+fileName = os.path.basename(__file__)
+start = time.time()
 updateInvestorERC20Balances()
+updateInvestorETHBalances()
+end = time.time()
+print(int(end - start), f'sec to process {fileName}')
 

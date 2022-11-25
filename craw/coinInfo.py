@@ -15,12 +15,11 @@ load_dotenv()
 # coinDocs = client['tokens']
 coinTestDocs = client['tokensTest']
 
-#  TODO Transfer to mongoDB
 cmc_keys = os.environ['cmc_keys']
 cmc_keys = [i.strip() for i in cmc_keys.split(',')]
 
 
-
+# #TODO contract to cgcId
 def crawTokenCGCID():
 
     getIdAPI = 'https://api.coingecko.com/api/v3/coins/ethereum/contract/'
@@ -64,7 +63,7 @@ def crawTokenCGCID():
 
 
 
-def getCoinData(cgcId):
+def getCoinData(id):
 
     parameter = {
         'localization' : False,
@@ -75,7 +74,7 @@ def getCoinData(cgcId):
         'sparkline' : False
 
     }
-    APIURL = f'https://api.coingecko.com/api/v3/coins/{cgcId}'
+    APIURL = f'https://api.coingecko.com/api/v3/coins/{id}'
 
 
     statusCode = -1
@@ -83,13 +82,13 @@ def getCoinData(cgcId):
 
         time.sleep( (statusCode != -1) * 70)
 
-        print(f'Crawl data for {cgcId}')
+        print(f'Crawl data for {id}')
         response = requests.get(APIURL, params=parameter)
 
         statusCode = response.status_code
 
         if statusCode == 404:
-            print(f'Dont have data for {cgcId}')
+            print(f'Dont have data for {id}')
             break
         if statusCode != 200:
             print('Next time sleep for 70 Secs')
@@ -105,16 +104,19 @@ def getCoinData(cgcId):
 
 def coinDataHandler():
 
-    idCoins = [coinDoc['cgcId'] for coinDoc in coinTestDocs.find()]
-
-    for idCoin in idCoins:
+    projection = {'_id' : 1, 'last_updated' : 1}
+    for coinDoc in coinTestDocs.find({}, projection):
+        idCoin = coinDoc['_id']
+        
         print(f'Get data of {idCoin}')
         coinData = getCoinData(idCoin)
 
+        oldUpdate = coinDoc['last_updated']
         coinTestDocs.update_one(
-            {'cgcId' : idCoin},
+            {'_id' : idCoin},
             {'$set' : coinData}
         )
+        newUpdate = coinDoc['last_updated']
 
         print(f'Get data success of {idCoin}')
         time.sleep(2)

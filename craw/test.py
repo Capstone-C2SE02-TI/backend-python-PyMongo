@@ -1,19 +1,11 @@
+from mongoDB_init import client
+import requests
+coinTestDocs = client['tokensTest']
 
-# from concurrent.futures import ThreadPoolExecutor
-import concurrent.futures
 
-arr = [2,1,3]
+response = requests.get('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=true&market_data=true&community_data=true&developer_data=true&sparkline=true')
+response = response.json()
+response['_id'] = response['id']
+response.pop('id',None)
 
-# arr.sort()
-
-# print(arr)
-def ti(b, c = 0, d = 0):
-    print(b,c,d)
-
-with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-    fs = [executor.submit(ti,ar,c=3) for ar in arr]
-
-    a = concurrent.futures.wait(fs,return_when="ALL_COMPLETED")
-
-print(a.not_done.__len__()) 
-    
+coinTestDocs.insert_one(response)

@@ -3,20 +3,23 @@ import datetime
 import time
 
 investorDocs = client['investors']
-metadataDocs = client['metadatas']
+coinTestDocs = client['tokensTest']
 
 def getLatestTokenPrice():
     priceBySymbol = {}
 
-    for metadataDoc in metadataDocs.find({'category' : 'token'}):
-        if 'hourly' not in metadataDoc['prices']:
+    filter = {'asset_platform_id' : {'$ne' : None}}
+    projection = {'prices' : 1, 'symbol' : 1}
+    for coinTestDoc in coinTestDocs.find(filter,projection):
+        coinSymbol = coinTestDoc['symbol']
+        if 'hourly' not in coinTestDoc['prices']:
+            print(f'{coinSymbol} dont have hourly price')
             continue
 
-        hourlyPrice = metadataDoc['prices']['hourly']
-        latestTimeStamp = max(hourlyPrice.keys())
+        hourlyPrice = coinTestDoc['prices']['hourly']
+        latestTimeStamp = max(hourlyPrice.keys(), default=0)
 
-        tokenSymbol = metadataDoc['symbol']
-        priceBySymbol[tokenSymbol] = hourlyPrice[latestTimeStamp]
+        priceBySymbol[coinSymbol] = hourlyPrice.get(latestTimeStamp,0)
 
     return priceBySymbol
 
@@ -30,23 +33,26 @@ def investorTotalAssetSnapshot():
     priceBySymbol = getLatestTokenPrice()
 
     ms = datetime.datetime.now()
-    currentTimestamp = str(int(time.mktime(ms.timetuple()) * 1000))
+    currentTimestamp = str(int(time.mktime(ms.timetuple()) ))
+    print(priceBySymbol)
+    # for investorDoc in investorDocs.find():
+    #     investorAddress = investorDoc['_id']
 
-    for investorDoc in investorDocs.find():
-
-        totalAsset = 0
-        for symbol,balance in investorDoc['coins'].items():
+    #     print(f'Total asset for {investorAddress}')
+    #     totalAsset = 0
+    #     for symbol,balance in investorDoc['coins'].items():
             
-            if symbol not in priceBySymbol:
-                continue
+    #         if symbol not in priceBySymbol:
+    #             continue
 
-            tokenAsset = priceBySymbol[symbol] * balance
-            totalAsset += tokenAsset
+    #         tokenAsset = priceBySymbol.get(symbol,0) * balance
+    #         totalAsset += tokenAsset
 
-        investorDocs.update_one(
-            {'_id' : investorDoc['_id']},
-            {'$set' : {f'snapshots.{currentTimestamp}' : int(totalAsset)}}
-        )
+    #     print(totalAsset)
+    #     investorDocs.update_one(
+    #         {'_id' : investorAddress},
+    #         {'$set' : {f'snapshots.{currentTimestamp}' : int(totalAsset)}}
+    #     )
 
 # investorTotalAssetSnapshot()
 investorTotalAssetSnapshot()

@@ -46,3 +46,6 @@ TOKENID = CGC API : coins/{TOKENID} => DATA => ADDDATA TO MONGODB
 
 # CGC PRICE FOLLOW
 CGC API = f'coins/{TokenId}/market_chart/range?vs_currency=usd&from={from}&to={to}'
+
+# get Doc dont have TXs[0]
+for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : False}}):

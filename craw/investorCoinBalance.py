@@ -10,8 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 investorDocs = client['investors']
-metadataDocs = client['metadatas']
-tokenDocs = client['tokens']
+coinTestDocs = client['tokensTest']
 
 ets_keys = os.environ['ets_keys']
 ets_keys = [key.strip() for key in ets_keys.split(',')]
@@ -85,7 +84,7 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
 
     try:
         response = requests.post(
-            f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}', timeout=5, json=payload, headers=headers)
+            f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}', json=payload, headers=headers)
     except:
         print(f'get {investorAddress} balance run out of time')
         return 0
@@ -100,23 +99,19 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
 
     return balancesResult
 
-# async def test1(investorAddresses,alchemy_keys,contractAddressesChunk):
-#     with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-#         multiBalanceResults = [executor.submit(getInvestorsERC20Balance,investorAddress,contractAddressesChunk,alchemy_key)
-#             for investorAddress,alchemy_key in zip(investorAddresses,alchemy_keys)]
-#         await asyncio.sleep(10)
-
-#     return multiBalanceResults
-
 
 def updateInvestorERC20Balances():
 
     contractAddresses, symbols, decimals = [], [], []
-    for tokenDoc in tokenDocs.find():
-        contractAddresses.append(tokenDoc['_id'])
-        symbols.append(tokenDoc['symbol'])
-        decimals.append(tokenDoc['decimal'])
+    filter = {'asset_platform_id' : {'$ne' : None}}
+    projection = {'symbol' : 1, 'detail_platforms' : 1}
+    for coinDoc in coinTestDocs.find(filter, projection):
+        symbols.append(coinDoc['symbol'])
 
+        contractAddresses.append(coinDoc['detail_platforms']['ethereum']['contract_address'])
+        decimals.append(coinDoc['detail_platforms']['ethereum']['decimal_place'])
+    
+    
     chunkSize = 100
     contractAddresses = [contractAddresses[i:i + chunkSize]
                          for i in range(0, len(contractAddresses), chunkSize)]
@@ -128,7 +123,7 @@ def updateInvestorERC20Balances():
     updateCount = 0
 
     investorAddresses = [investorDoc['_id']
-                         for investorDoc in investorDocs.find({}, {'TXs': 0})]
+                         for investorDoc in investorDocs.find({}, {'_id': 1})]
     
     # investorAddresses = investorAddresses[:15]
     investorAddresses.sort(key=str.lower)
@@ -136,8 +131,14 @@ def updateInvestorERC20Balances():
     balanceUpdated = {}
     for symbolsChunk, contractAddressesChunk, decimalChunk in zip(symbols, contractAddresses, decimals):
         with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-            multiBalanceResults = [executor.submit(getInvestorsERC20Balance, investorAddress, contractAddressesChunk, alchemy_key)
-                                   for investorAddress, alchemy_key in zip(investorAddresses, alchemy_keys)]
+            multiBalanceResults = [
+                executor.submit(
+                    getInvestorsERC20Balance, 
+                    investorAddress,
+                    contractAddressesChunk, 
+                    alchemy_key)
+                for investorAddress, alchemy_key in zip(investorAddresses, alchemy_keys)
+            ]
 
         waiTest = concurrent.futures.wait(
             multiBalanceResults, return_when="ALL_COMPLETED")
@@ -146,8 +147,8 @@ def updateInvestorERC20Balances():
             print("All the futures not done yet!")
             break
 
-        multiBalanceResults = [balanceResults.result(
-        ) for balanceResults in concurrent.futures.as_completed(multiBalanceResults)]
+        multiBalanceResults = [balanceResults.result() 
+                               for balanceResults in concurrent.futures.as_completed(multiBalanceResults)]
         
 
         multiBalanceResults.sort(key=lambda x: x['address'].lower())

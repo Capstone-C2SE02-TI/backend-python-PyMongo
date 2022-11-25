@@ -1,6 +1,7 @@
-from email import header
-from email.quoprimime import quote
+from mongoDB_init import client
 from requests import Session
+import requests
+
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
 import json
@@ -11,84 +12,120 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-# firebase pre-handler
-from mongoDB_init import client
-coinDocs = client['coins']
+# coinDocs = client['tokens']
+coinTestDocs = client['tokensTest']
 
-
-cmc_api = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+#  TODO Transfer to mongoDB
 cmc_keys = os.environ['cmc_keys']
 cmc_keys = [i.strip() for i in cmc_keys.split(',')]
 
-parameters = {
-  'start':'1',
-  'limit':'10',
-  'convert':'USD',
-  'sort_dir':'desc',
-  'cryptocurrency_type':'coins',
-  'aux':'num_market_pairs,cmc_rank,date_added,tags,platform,circulating_supply,volume_24h_reported,volume_7d,volume_7d_reported,volume_30d,volume_30d_reported'
-}
-headers = {
-    'Accepts': 'application/json',
-}
-
-session = Session()
-
-def crawCoinInfo(runTimes):
 
 
-  headers['X-CMC_PRO_API_KEY'] = cmc_keys[runTimes % len(cmc_keys)]
-  session.headers.update(headers)
-  
-  try:
-    response = session.get(cmc_api, params=parameters)
-    data = json.loads(response.text)
+def crawTokenCGCID():
+
+    getIdAPI = 'https://api.coingecko.com/api/v3/coins/ethereum/contract/'
+
+    for coinDoc in coinTestDocs.find({'cgcId' : {'$exists' : 0}}):
+
+        tokenAddress = coinDoc['_id']
+        statusCode = -1
+        while statusCode != 200:
+
+            time.sleep( (statusCode != -1) * 70)
+
+            print(f'Crawl cgcId for {tokenAddress}')
+            response = requests.get(f'{getIdAPI}{tokenAddress.lower()}')
+
+            statusCode = response.status_code
+
+            if statusCode == 404:
+                print(f'Dont have id for {tokenAddress}')
+                break
+            if statusCode != 200:
+                print('Next time sleep for 70 Secs')
+                print(response.json())
+                continue
+                
+            cgcId = response.json()['id']
+
+            coinTestDocs.update_one(
+                {'_id' : tokenAddress},
+                {'$set' : {'cgcId' : cgcId}}
+            )
+
+            print(f'Crawl cgcId success for {tokenAddress}')
+
+        time.sleep(2)
 
 
 
-    for coin in data['data']:
 
-      # Upscale later ( now only ETH )
-      # Platform len is only 1.
-      # Recognize multi eco system by using tags
 
-        coin['TXs'] = []
-        coinSlug = coin['slug']
-        print(f'Adding {coinSlug} to firebase')
-        coinDocs.document(coinSlug).set(coin)
+
+
+
+def getCoinData(cgcId):
+
+    parameter = {
+        'localization' : False,
+        'tickers' : False,
+        'market_data' : True,
+        'community_data' : False,
+        'developer_data' : False,
+        'sparkline' : False
+
+    }
+    APIURL = f'https://api.coingecko.com/api/v3/coins/{cgcId}'
+
+
+    statusCode = -1
+    while statusCode != 200:
+
+        time.sleep( (statusCode != -1) * 70)
+
+        print(f'Crawl data for {cgcId}')
+        response = requests.get(APIURL, params=parameter)
+
+        statusCode = response.status_code
+
+        if statusCode == 404:
+            print(f'Dont have data for {cgcId}')
+            break
+        if statusCode != 200:
+            print('Next time sleep for 70 Secs')
+            print(response.json())
+            continue
+
+        coinData = response.json()
+
+    return coinData
+
     
 
 
-  except (ConnectionError, Timeout, TooManyRedirects) as e:
-    print(e)
+def coinDataHandler():
 
-  runTimes += 1
+    idCoins = [coinDoc['cgcId'] for coinDoc in coinTestDocs.find()]
+
+    for idCoin in idCoins:
+        print(f'Get data of {idCoin}')
+        coinData = getCoinData(idCoin)
+
+        coinTestDocs.update_one(
+            {'cgcId' : idCoin},
+            {'$set' : coinData}
+        )
+
+        print(f'Get data success of {idCoin}')
+        time.sleep(2)
 
 
-def updateCoinInfo(runTimes):
-
-
-  headers['X-CMC_PRO_API_KEY'] = cmc_keys[runTimes % len(cmc_keys)]
-  session.headers.update(headers)
   
-  try:
-    response = session.get(cmc_api, params=parameters)
-    data = json.loads(response.text)
+
+# crawTokenInfo(0)
+# crawTokenCGCID()
+# updateTokenInfo(0)
+coinDataHandler()
 
 
-    for coin in data['data']:
 
-        coinSlug = coin['slug']
-        print(f'Update {coinSlug} to mongoDB')
-        coinDocs.update_one(
-          {'id' : coin['id']},
-          {'$set' : coin}
-        )        
-    
-
-
-  except (ConnectionError, Timeout, TooManyRedirects) as e:
-    print(e)
-
-
-updateCoinInfo(0)

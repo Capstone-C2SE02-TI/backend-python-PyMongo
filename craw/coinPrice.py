@@ -4,7 +4,7 @@ import json
 from mongoDB_init import client
 import time
 from datetime import date, timedelta, datetime
-
+import os
 
 coinTestDocs = client['tokensTest']
 
@@ -51,7 +51,7 @@ def getCoinPrice(id, interval, days):
 
         if statusCode != 200:
             print('Now sleep for 70 Secs')
-            print(response.json())
+            print(f'Status error code: {statusCode}')
             time.sleep(65)
             continue
 
@@ -77,9 +77,10 @@ def getCoinPriceByRange(id, fromSecUnix, toSecUnix):
             return []
 
         if statusCode != 200:
-            print('Now sleep for 70 Secs')
-            print(response.json())
-            time.sleep(65)
+            print(f'Now sleep for 70 Secs : {int(time.time())}')
+            print(statusCode)
+            time.sleep(70)
+            print(f'Done sleep, let continue! : {int(time.time())}')
             continue
 
     return response.json()['prices']
@@ -90,7 +91,8 @@ def coinPriceHandler():
     intervals = ['daily', 'hourly', 'minutely']
     dayss = ['max', '90', '1']
 
-    for coinDoc in coinTestDocs.find({}, {'_id': 1}):
+    coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
+    for coinId in coinIds:
 
         priceUpdate = {
             'daily'   : {},
@@ -99,8 +101,6 @@ def coinPriceHandler():
         }
         for interval, days in zip(intervals, dayss):
 
-            coinId = coinDoc['_id']
-
             print(f'Getting price {interval} for {coinId}')
             coinPrice = getCoinPrice(coinId, interval, days)
 
@@ -108,7 +108,7 @@ def coinPriceHandler():
                 secondUnix = int(miliUnix / 1000)
 
                 priceUpdate[interval][f'{secondUnix}'] = price
-            time.sleep(5)
+            time.sleep(2)
             
 
         coinTestDocs.update_one(
@@ -161,11 +161,12 @@ def coinPriceMinutelyHandler():
         time.sleep(2)
 
 
-
+fileName = os.path.basename(__file__)
 start = time.time()
 coinPriceMinutelyHandler()
+# coinPriceHandler()
 end = time.time()
-print(int(end - start), 'sec to process this')
+print(int(end - start), f'sec to process {fileName}')
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
 #     ts = int(unix/1000)
 #     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)

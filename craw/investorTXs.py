@@ -41,8 +41,6 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
         newTXs = newTXs.json()
         newTXs['investorAddress'] = investorAddress
     else:
-        print(f'Dont have result in {investorAddress} TXs:')
-        print(newTXs.json())
         return {}
 
     print(f'Crawling new TXs of {investorAddress} successfully')
@@ -123,7 +121,7 @@ def updateInvestorTXs2(runTimes, timeGap):
                     '$push':{ 
                         'TXs': { 
                                 '$each': response.result()['result']
-                            } 
+                        } 
                     },
                     '$set':{
                         'latestBlockNumber' : newLatestBlock

@@ -20,48 +20,54 @@ cmc_keys = [i.strip() for i in cmc_keys.split(',')]
 
 
 # #TODO contract to cgcId
-def crawTokenCGCID():
+def newCoinIdHandler():
 
-    getIdAPI = 'https://api.coingecko.com/api/v3/coins/ethereum/contract/'
+    f = open('coinId.json')
+  
+    # returns JSON object as 
+    # a dictionary
+    data = json.load(f)
+    
+    # Iterating through the json
+    # list
+    getIdAPI = 'https://api.coingecko.com/api/v3/coins/'
+    coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({},{'_id' : 1})]
+    for i in data:
+    
+        coinId = i['id']
+        if coinId in coinIds:
+            continue
 
-    for coinDoc in coinTestDocs.find({'cgcId' : {'$exists' : 0}}):
-
-        tokenAddress = coinDoc['_id']
         statusCode = -1
         while statusCode != 200:
 
-            time.sleep( (statusCode != -1) * 70)
 
-            print(f'Crawl cgcId for {tokenAddress}')
-            response = requests.get(f'{getIdAPI}{tokenAddress.lower()}')
+            print(f'Test isCoin : {coinId}')
+            response = requests.get(f'{getIdAPI}{coinId}')
 
             statusCode = response.status_code
 
             if statusCode == 404:
-                print(f'Dont have id for {tokenAddress}')
+                print(f'Dont have info for {coinId}')
                 break
             if statusCode != 200:
                 print('Next time sleep for 70 Secs')
-                print(response.json())
-                continue
+                time.sleep(70)
+
+                print(response.status_code)
+                continue    
+
+            response = response.json()
+            if response['asset_platform_id'] == None:
+
                 
-            cgcId = response.json()['id']
+                coinTestDocs.insert_one(
+                    {'_id' : coinId},
+                )
 
-            coinTestDocs.update_one(
-                {'_id' : tokenAddress},
-                {'$set' : {'cgcId' : cgcId}}
-            )
-
-            print(f'Crawl cgcId success for {tokenAddress}')
+                print(f'Test isCoin success : {coinId}')
 
         time.sleep(2)
-
-
-
-
-
-
-
 
 def getCoinData(id):
 
@@ -92,7 +98,7 @@ def getCoinData(id):
             break
         if statusCode != 200:
             print('Next time sleep for 70 Secs')
-            print(response.json())
+            print(statusCode)
             continue
 
         coinData = response.json()
@@ -111,12 +117,10 @@ def coinDataHandler():
         print(f'Get data of {idCoin}')
         coinData = getCoinData(idCoin)
 
-        oldUpdate = coinDoc['last_updated']
         coinTestDocs.update_one(
             {'_id' : idCoin},
             {'$set' : coinData}
         )
-        newUpdate = coinDoc['last_updated']
 
         print(f'Get data success of {idCoin}')
         time.sleep(2)
@@ -124,10 +128,13 @@ def coinDataHandler():
 
   
 
-# crawTokenInfo(0)
-# crawTokenCGCID()
-# updateTokenInfo(0)
+
+
+fileName = os.path.basename(__file__)
+start = time.time()
 coinDataHandler()
+end = time.time()
+print(int(end - start), f'sec to process {fileName}')
 
 
 

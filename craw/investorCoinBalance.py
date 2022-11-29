@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 investorDocs = client['investors']
-coinTestDocs = client['tokensTest']
+coinTestDocs = client['coins']
 
 ets_keys = os.environ['ets_keys']
 ets_keys = [key.strip() for key in ets_keys.split(',')]
@@ -22,7 +22,11 @@ alchemy_keys = alchemy_keys * 10000
 
 # TODO Change the name later, it not dict
 
+def test():
 
+    for invest in investorDocs.find({},{'_id' : 1}):
+        print(invest['_id'])
+        break
 def getWalletsETHBalance(wallets, ets_key):
 
     wallets = ','.join(wallets)
@@ -45,7 +49,6 @@ def updateInvestorETHBalances():
                          for investorDoc in investorDocs.find({}, {'_id': 1})]
     investorAddresses = [investorAddresses[i:i + chunkSize]
                          for i in range(0, len(investorAddresses), chunkSize)]
-    print(len(investorAddresses))
                     
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         multiETHBalanceResults = [
@@ -63,7 +66,6 @@ def updateInvestorETHBalances():
     countTest = 0
     for ETHBalanceResults in multiETHBalanceResults:
         countTest += 1
-        print(countTest*len(ETHBalanceResults['result']))
         for ETHBalanceResult in ETHBalanceResults['result']:
             investorAddress = ETHBalanceResult['account']
             if len(ETHBalanceResult['balance']) <= 13:
@@ -75,7 +77,7 @@ def updateInvestorETHBalances():
                 {'$set' : {'coins.eth' : ETHBalance} }
             )    
 
-            # print(f'Update ETH Balance : {ETHBalance} success for {investorAddress}')
+            print(f'Update ETH Balance : {ETHBalance} success for {investorAddress}')
 
 
 def convertDecimal(value, decimalFrom, decimalTo=0):
@@ -215,10 +217,10 @@ def updateInvestorERC20Balances():
             print(f'Update No.{updateCount} success.', investorAddress)
 
 
-fileName = os.path.basename(__file__)
-start = time.time()
-updateInvestorERC20Balances()
-updateInvestorETHBalances()
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
+# fileName = os.path.basename(__file__)
+# start = time.time()
+# updateInvestorERC20Balances()
+# updateInvestorETHBalances()
+# end = time.time()
+# print(int(end - start), f'sec to process {fileName}')
 

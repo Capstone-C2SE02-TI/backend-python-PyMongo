@@ -12,8 +12,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-# coinDocs = client['tokens']
-coinTestDocs = client['tokensTest']
+coinTestDocs = client['coins']
 
 cmc_keys = os.environ['cmc_keys']
 cmc_keys = [i.strip() for i in cmc_keys.split(',')]

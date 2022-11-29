@@ -3,7 +3,7 @@ import datetime
 import time
 
 investorDocs = client['investors']
-coinTestDocs = client['tokensTest']
+coinTestDocs = client['coins']
 
 def getLatestTokenPrice():
     priceBySymbol = {}

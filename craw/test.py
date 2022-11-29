@@ -6,10 +6,9 @@ import concurrent.futures
 coingecko = ["coinInfo.py"]
 alchemy = ["investorCoinBalance.py"]
 etherscan = ["investorTXs.py"]
-normal = ["investorTXs.py"]
+normal = ["investorTotalAsset.py"]
 
-zipAll = ["coinInfo.py", "investorCoinBalance.py", "investorTXs.py", "investorTXs.py"]
-subprocess.run(["py",""])
+zipAll = ["coinInfo.py", "investorCoinBalance.py", "investorTXs.py", "investorTotalAsset.py"]
 
 with concurrent.futures.ThreadPoolExecutor() as executor:
     for pyFile in zipAll:

@@ -1,4 +1,6 @@
-a = [[1,2],[3,4]]
+from mongoDB_init import client
+from investorCoinBalance import test
 
-for b,c in a.values():
-    print(b,c)
+
+investorDocs = client['coins']
+test()

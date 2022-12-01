@@ -90,15 +90,13 @@ def coinPriceHandler():
 
     intervals = ['daily', 'hourly', 'minutely']
     dayss = ['max', '90', '1']
+    # intervals = ['daily', 'hourly']
+    # dayss = ['10', '10']
 
     coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
     for coinId in coinIds:
 
-        priceUpdate = {
-            'daily'   : {},
-            'hourly'  : {},
-            'minutely': {}
-        }
+        priceUpdate = {}
         for interval, days in zip(intervals, dayss):
 
             print(f'Getting price {interval} for {coinId}')
@@ -107,16 +105,14 @@ def coinPriceHandler():
             for miliUnix, price in coinPrice:
                 secondUnix = int(miliUnix / 1000)
 
-                priceUpdate[interval][f'{secondUnix}'] = price
+                priceUpdate[f'prices.{interval}.{secondUnix}'] = price
             time.sleep(2)
             
 
         coinTestDocs.update_one(
             {'_id': coinId},
             [
-                {'$set': {f'prices.daily': priceUpdate['daily']}},
-                {'$set': {f'prices.hourly': priceUpdate['hourly']}},
-                {'$set': {f'prices.minutely': priceUpdate['minutely']}}
+                {'$set': priceUpdate}
             ]
         )
         print(f'Get price success for {coinId}')
@@ -140,8 +136,6 @@ def coinPriceMinutelyHandler():
 
         coinId = coinDoc['_id']
 
-        coinId = coinDoc['_id']
-
         print(f'Getting price minutely for {coinId}')
         coinPrice = getCoinPriceByRange(coinId, fromSecUnix, toSecUnix)
 
@@ -149,12 +143,14 @@ def coinPriceMinutelyHandler():
         for miliUnix, price in coinPrice:
             secondUnix = int(miliUnix / 1000)
 
-            priceUpdate[f'{secondUnix}'] = price
+            priceUpdate[f'prices.minutely.{secondUnix}'] = price
         
+        if priceUpdate == {}:
+            continue
 
         coinTestDocs.update_one(
             {'_id': coinId},
-            {'$set': {f'prices.minutely': priceUpdate}}
+            {'$set': priceUpdate}
         )
         print(f'Get price minutely success for {coinId}')
 
@@ -167,6 +163,11 @@ coinPriceMinutelyHandler()
 # coinPriceHandler()
 end = time.time()
 print(int(end - start), f'sec to process {fileName}')
+
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
+#     ts = int(unix/1000)
+#     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)
+
+# for unix,price in getCoinPrice('bitcoin',interval='daily',days=1):
 #     ts = int(unix/1000)
 #     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)

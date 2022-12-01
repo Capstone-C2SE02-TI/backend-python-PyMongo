@@ -1,7 +1,7 @@
 from mongoDB_init import client
 import datetime
 import time
-
+import os
 investorDocs = client['investors']
 coinTestDocs = client['coins']
 
@@ -29,7 +29,6 @@ def getLatestTokenPrice():
 
 def investorTotalAssetSnapshot():
 
-    # TODO get latest price by symbol
     priceBySymbol = getLatestTokenPrice()
 
     ms = datetime.datetime.now()
@@ -55,4 +54,9 @@ def investorTotalAssetSnapshot():
         )
 
 # investorTotalAssetSnapshot()
+fileName = os.path.basename(__file__)
+start = time.time()
 investorTotalAssetSnapshot()
+
+end = time.time()
+print(int(end - start), f'sec to process {fileName}')

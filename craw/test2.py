@@ -1,6 +1,15 @@
 from mongoDB_init import client
-from investorCoinBalance import test
+testDoc = client['tests']
+priceUpdate = {
+    '2' : 2,
+    '3' : 4
+}
+def initPricesField():
+
+    testDoc.update_many(
+            {},
+            {"$addFields":{f'prices.minutely': {"$mergeObjects": [f'prices.minutely', priceUpdate]}}}
+    )
 
 
-investorDocs = client['coins']
-test()
+initPricesField()

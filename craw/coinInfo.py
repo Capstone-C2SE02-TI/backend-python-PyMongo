@@ -18,7 +18,6 @@ cmc_keys = os.environ['cmc_keys']
 cmc_keys = [i.strip() for i in cmc_keys.split(',')]
 
 
-# #TODO contract to cgcId
 def newCoinIdHandler():
 
     f = open('coinId.json')

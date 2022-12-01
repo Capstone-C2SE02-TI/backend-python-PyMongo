@@ -20,7 +20,6 @@ alchemy_keys = os.environ['alchemy_keys']
 alchemy_keys = [key.strip() for key in alchemy_keys.split(',')]
 alchemy_keys = alchemy_keys * 10000
 
-# TODO Change the name later, it not dict
 
 def test():
 
@@ -112,7 +111,7 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
         # balancesResult = response.json()['result']['address']
         # balancesResult = response.json()
     except:
-        print(f'get balance of {investorAddress} get error in return api')
+        print(f'get ERC20 balance of {investorAddress} error, Status code:{response.status_code}')
 
     return balancesResult
 
@@ -147,7 +146,7 @@ def updateInvestorERC20Balances():
 
     balanceUpdated = {}
     for symbolsChunk, contractAddressesChunk, decimalChunk in zip(symbols, contractAddresses, decimals):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
             multiBalanceResults = [
                 executor.submit(
                     getInvestorsERC20Balance, 
@@ -217,10 +216,10 @@ def updateInvestorERC20Balances():
             print(f'Update No.{updateCount} success.', investorAddress)
 
 
-# fileName = os.path.basename(__file__)
-# start = time.time()
-# updateInvestorERC20Balances()
-# updateInvestorETHBalances()
-# end = time.time()
-# print(int(end - start), f'sec to process {fileName}')
+fileName = os.path.basename(__file__)
+start = time.time()
+updateInvestorERC20Balances()
+updateInvestorETHBalances()
+end = time.time()
+print(int(end - start), f'sec to process {fileName}')
 

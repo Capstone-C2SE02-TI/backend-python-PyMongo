@@ -135,14 +135,14 @@ def updateInvestorTXs2(runTimes, timeGap):
         print(f'Update TXs success in {investorAddress}')
 
 
-    
+
 
 
 
 fileName = os.path.basename(__file__)
 start = time.time()
 # resetInvestorTXs()
-# setLatestBlockNumber(15426981)
+# setLatestBlockNumber()
 updateInvestorTXs2(0,0)
 end = time.time()
 print(int(end - start), f'sec to process {fileName}')

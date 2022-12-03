@@ -14,7 +14,7 @@ zipAll = ["coinInfo.py", "investorCoinBalance.py", "investorTXs.py", "investorTo
 
 fileName = os.path.basename(__file__)
 start = time.time()
-# subprocess.run(['py', 'coinPrice.py'])
+subprocess.run(['py', 'coinPrice.py'])
 with concurrent.futures.ThreadPoolExecutor() as executor:
     for pyFile in zipAll:
         executor.submit(subprocess.run, ['py',pyFile])

@@ -8,7 +8,7 @@ def initPricesField():
 
     testDoc.update_many(
             {},
-            {"$addFields":{f'prices.minutely': {"$mergeObjects": [f'prices.minutely', priceUpdate]}}}
+            {"$set" : {'a' : 3}}
     )
 
 

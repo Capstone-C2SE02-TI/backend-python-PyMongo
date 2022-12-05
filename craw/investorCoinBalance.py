@@ -34,14 +34,15 @@ def getWalletsETHBalance(wallets, ets_key):
                                   '&action=balancemulti'
                                   f'&address={wallets}'
                                   '&tag=latest'
-                                  f'&apikey={ets_key}'
+                                  f'&apikey={ets_key}',
+                                  timeout=60
                                   )
 
     balancesResult = balancesResult.json()
     return balancesResult
 
 
-def updateInvestorETHBalances():
+def updateInvestorETHBalances(maxWorkers = 10):
     chunkSize = 20
 
     investorAddresses = [investorDoc['_id']
@@ -49,7 +50,7 @@ def updateInvestorETHBalances():
     investorAddresses = [investorAddresses[i:i + chunkSize]
                          for i in range(0, len(investorAddresses), chunkSize)]
                     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
         multiETHBalanceResults = [
             executor.submit(
                 getWalletsETHBalance, 
@@ -66,17 +67,21 @@ def updateInvestorETHBalances():
     for ETHBalanceResults in multiETHBalanceResults:
         countTest += 1
         for ETHBalanceResult in ETHBalanceResults['result']:
+
+            if isinstance(ETHBalanceResult, str):
+                print(ETHBalanceResults)
+                return False
             investorAddress = ETHBalanceResult['account']
+
             if len(ETHBalanceResult['balance']) <= 13:
                 continue
             
             ETHBalance = float(ETHBalanceResult['balance'][:-13])/(10**fractionDigits)
-            investorDocs.update_one(
-                {'_id' : investorAddress},
-                {'$set' : {'coins.eth' : ETHBalance} }
-            )    
-
-            print(f'Update ETH Balance : {ETHBalance} success for {investorAddress}')
+            # investorDocs.update_one(
+            #     {'_id' : investorAddress},
+            #     {'$set' : {'coins.eth' : ETHBalance} }
+            # )    
+    return True
 
 
 def convertDecimal(value, decimalFrom, decimalTo=0):
@@ -100,23 +105,23 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
 
     try:
         response = requests.post(
-            f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}', json=payload, headers=headers)
+            f'https://eth-mainnet.alchemyapi.io/v2/{alchemy_key}', json=payload, headers=headers, timeout=60)
     except:
         print(f'get {investorAddress} balance run out of time')
-        return 0
+        return {'status' : 0}
+        
+    balancesResult = {}
 
     try:
         balancesResult = response.json()['result']
-        # balancesResult = response.json()['result']
-        # balancesResult = response.json()['result']['address']
-        # balancesResult = response.json()
     except:
         print(f'get ERC20 balance of {investorAddress} error, Status code:{response.status_code}')
-
+        
+    balancesResult['status'] = 1
     return balancesResult
 
 
-def updateInvestorERC20Balances():
+def updateInvestorERC20Balances(maxWorkers = 50):
 
     contractAddresses, symbols, decimals = [], [], []
     filter = {'asset_platform_id' : {'$ne' : None}}
@@ -146,7 +151,7 @@ def updateInvestorERC20Balances():
 
     balanceUpdated = {}
     for symbolsChunk, contractAddressesChunk, decimalChunk in zip(symbols, contractAddresses, decimals):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             multiBalanceResults = [
                 executor.submit(
                     getInvestorsERC20Balance, 
@@ -161,23 +166,28 @@ def updateInvestorERC20Balances():
 
         if waiTest.not_done.__len__() != 0:
             print("All the futures not done yet!")
-            break
+            return False
+        
+        print('All futures all done')
 
         multiBalanceResults = [balanceResults.result() 
                                for balanceResults in concurrent.futures.as_completed(multiBalanceResults)]
         
 
-        multiBalanceResults.sort(key=lambda x: x['address'].lower())
+        multiBalanceResults.sort(key=lambda x: x.get('address','0').lower())
      
         print(len(investorAddresses) == len(multiBalanceResults),
               len(investorAddresses), len(multiBalanceResults))
         
         
         for investorAddress, balanceResults in zip(investorAddresses, multiBalanceResults):
-            if investorAddress.lower() != balanceResults['address'].lower():
+            if investorAddress.lower() != balanceResults.get('address','0').lower():
                 print('different Address between input and output')
-                time.sleep(0.5)
-                break
+                return False            
+
+            if balanceResults.get('status',0) == 0:
+                print('Nah, error so I gotta our of here')
+                return False
 
             coinBalances = {}
             
@@ -200,26 +210,27 @@ def updateInvestorERC20Balances():
 
            
             
-            if investorAddress not in balanceUpdated:
-                investorDocs.update_one(
-                    {'_id': investorAddress},
-                    [{'$set': {'coins' : {'$literal': {}}}},{'$set': coinBalances}]
-                )
+            # if investorAddress not in balanceUpdated:
+            #     investorDocs.update_one(
+            #         {'_id': investorAddress},
+            #         [{'$set': {'coins' : {'$literal': {}}}},{'$set': coinBalances}]
+            #     )
 
-                balanceUpdated[investorAddress] = True
-            else:
-                investorDocs.update_one(
-                    {'_id': investorAddress},
-                    {'$set': coinBalances}
-                )
+            #     balanceUpdated[investorAddress] = True
+            # else:
+            #     investorDocs.update_one(
+            #         {'_id': investorAddress},
+            #         {'$set': coinBalances}
+            #     )
 
-            print(f'Update No.{updateCount} success.', investorAddress)
+            # print(f'Update No.{updateCount} success.', investorAddress)
+    return True
 
 
-fileName = os.path.basename(__file__)
-start = time.time()
-updateInvestorERC20Balances()
-updateInvestorETHBalances()
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
+# fileName = os.path.basename(__file__)
+# start = time.time()
+# updateInvestorERC20Balances()
+# print(updateInvestorETHBalances())
+# end = time.time()
+# print(int(end - start), f'sec to process {fileName}')
 

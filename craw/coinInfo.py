@@ -110,6 +110,8 @@ def coinDataHandler():
 
     projection = {'_id' : 1, 'last_updated' : 1}
     for coinDoc in coinTestDocs.find({}, projection):
+
+        
         idCoin = coinDoc['_id']
         
         print(f'Get data of {idCoin}')

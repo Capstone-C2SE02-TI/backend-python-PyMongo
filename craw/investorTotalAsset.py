@@ -30,11 +30,12 @@ def getLatestTokenPrice():
 def investorTotalAssetSnapshot():
 
     priceBySymbol = getLatestTokenPrice()
-
     ms = datetime.datetime.now()
     currentTimestamp = str(int(time.mktime(ms.timetuple()) ))
+    
     print(priceBySymbol)
-    for investorDoc in investorDocs.find():
+    projection = {'coins' : 1, '_id' : 1}
+    for investorDoc in investorDocs.find({},projection):
         investorAddress = investorDoc['_id']
 
         print(f'Total asset for {investorAddress}')
@@ -44,19 +45,52 @@ def investorTotalAssetSnapshot():
             if symbol not in priceBySymbol:
                 continue
 
-            tokenAsset = priceBySymbol.get(symbol,0) * balance
+            tokenAsset = priceBySymbol[symbol] * balance
             totalAsset += tokenAsset
 
-        print(totalAsset)
-        investorDocs.update_one(
+        updateResult = investorDocs.update_one(
             {'_id' : investorAddress},
             {'$set' : {f'snapshots.{currentTimestamp}' : int(totalAsset)}}
         )
+        print(totalAsset,updateResult.modified_count)
+    
+        if updateResult.modified_count == 0:
+            print('Cant update in', investorAddress)
+            break
+
+def updateSharkStatus():
+
+    sharkTotalAsset = 100000
+
+    # investorDocs.update_many(
+    #     {'$gte' : ['totalAsset']}
+    # )
+
+    for investorDoc in investorDocs.find({},{'snapshots' : 1}):
+
+        latestUnix = max(investorDoc['snapshots'].keys())
+
+        latestTotalAsset = investorDoc['snapshots'][latestUnix]
+
+        sharkStatus = latestTotalAsset >= sharkTotalAsset
+
+        investorDocs.update_one(
+            {'_id' : investorDoc['_id']},
+            {'$set' : {'is_shark' : sharkStatus}}
+        )
+
+
+
 
 # investorTotalAssetSnapshot()
-fileName = os.path.basename(__file__)
-start = time.time()
-investorTotalAssetSnapshot()
+# fileName = os.path.basename(__file__)
+# start = time.time()
+# investorTotalAssetSnapshot()
+# # investorTotalAssetSnapshot()
+# updateSharkStatus()
+# end = time.time()
+# print(int(end - start), f'sec to process {fileName}')
 
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
+
+# 0x25431341a5800759268a6ac1d3cd91c029d7d9ca 933496.7882288886
+# 0x5f397B62502e255f68382791947D54C4B2d37F09

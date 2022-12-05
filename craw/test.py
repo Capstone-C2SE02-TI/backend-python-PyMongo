@@ -1,12 +1,6 @@
-from mongoDB_init import client
 
-investorDocs = client['investors']
+from investorCoinBalance import updateInvestorERC20Balances
 
-for investorDoc in investorDocs.find({'TXs.11' : {'$exists' : 0}},{'TXs' : 1}):
-    investorTXs = investorDoc['TXs']
+a = [updateInvestorERC20Balances]
 
-    currentNonce = len(investorTXs)
-    
-    print(investorDoc['_id'], currentNonce)
-
-
+print(a[0]())

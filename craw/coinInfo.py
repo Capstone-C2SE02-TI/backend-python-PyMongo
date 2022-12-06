@@ -78,8 +78,7 @@ def getCoinData(id):
         'sparkline' : False
 
     }
-    APIURL = f'https://api.coingecko.com/api/v3/coins/{id}'
-
+    COIN_ID_API_URL = f'https://api.coingecko.com/api/v3/coins/{id}'
 
     statusCode = -1
     while statusCode != 200:
@@ -87,7 +86,7 @@ def getCoinData(id):
         time.sleep( (statusCode != -1) * 70)
 
         print(f'Crawl data for {id}')
-        response = requests.get(APIURL, params=parameter)
+        response = requests.get(COIN_ID_API_URL, params=parameter)
 
         statusCode = response.status_code
 
@@ -124,17 +123,3 @@ def coinDataHandler():
 
         print(f'Get data success of {idCoin}')
         time.sleep(2)
-
-
-  
-
-
-
-fileName = os.path.basename(__file__)
-start = time.time()
-coinDataHandler()
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
-
-
-

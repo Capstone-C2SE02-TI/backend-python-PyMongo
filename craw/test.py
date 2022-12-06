@@ -1,6 +1,7 @@
+from mongoDB_init import mainClient
 
-from investorCoinBalance import updateInvestorERC20Balances
+userDocs = mainClient['tokens']
 
-a = [updateInvestorERC20Balances]
 
-print(a[0]())
+for userDoc in userDocs.find():
+    print(userDoc['_id'])

@@ -79,18 +79,3 @@ def updateSharkStatus():
             {'$set' : {'is_shark' : sharkStatus}}
         )
 
-
-
-
-# investorTotalAssetSnapshot()
-# fileName = os.path.basename(__file__)
-# start = time.time()
-# investorTotalAssetSnapshot()
-# # investorTotalAssetSnapshot()
-# updateSharkStatus()
-# end = time.time()
-# print(int(end - start), f'sec to process {fileName}')
-
-
-# 0x25431341a5800759268a6ac1d3cd91c029d7d9ca 933496.7882288886
-# 0x5f397B62502e255f68382791947D54C4B2d37F09

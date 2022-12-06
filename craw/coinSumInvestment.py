@@ -37,4 +37,3 @@ def UpdateCoinSumInvest():
         if updateResult.modified_count == 1:
             print(f'Update sum invest of {symbol} is {sumInvest}')
 
-UpdateCoinSumInvest()

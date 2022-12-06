@@ -3,20 +3,27 @@ import os
 import concurrent.futures
 import time
 
-# coingecko = ["coinInfo.py", "coinPrice.py"]
-coingecko = ["coinInfo.py"]
-alchemy = ["investorCoinBalance.py"]
-etherscan = ["investorTXs.py"]
-normal = ["investorTotalAsset.py"]
+from coinInfo import coinDataHandler
+from coinPrice import coinPriceMinutelyHandler, coinPriceHandler
+from coinSumInvestment import UpdateCoinSumInvest
+from investorCoinBalance import updateInvestorERC20Balances,updateInvestorETHBalances
+from investorTotalAsset import investorTotalAssetSnapshot
+from investorTXs import updateInvestorTXs2
 
-zipAll = ["coinInfo.py", "investorCoinBalance.py", "investorTXs.py", "investorTotalAsset.py"]
+# coingecko = [coinDataHandler, coinPriceMinutelyHandler]
+coingecko = [coinPriceMinutelyHandler]
+alchemy = [updateInvestorERC20Balances]
+etherscan = [updateInvestorTXs2, updateInvestorETHBalances]
+normal = [investorTotalAssetSnapshot, UpdateCoinSumInvest]
 
+zipAll = coingecko + alchemy + etherscan + normal
 
 fileName = os.path.basename(__file__)
 start = time.time()
-subprocess.run(['py', 'coinPrice.py'])
+coinDataHandler()
+
 with concurrent.futures.ThreadPoolExecutor() as executor:
     for pyFile in zipAll:
-        executor.submit(subprocess.run, ['py',pyFile])
+        executor.submit(pyFile)
 end = time.time()
 print(int(end - start), f'sec to process {fileName}')

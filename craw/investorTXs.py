@@ -44,7 +44,7 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
 
         return {'status' : '-1'}
     # print(newTXs.json())
-    if newTXs.json()['status'] == '1' or newTXs.status_code == 200:
+    if newTXs.json().get('status',-1) == '1' or newTXs.status_code == 200:
         newTXs = newTXs.json()
         newTXs['investorAddress'] = investorAddress
     else:
@@ -156,17 +156,3 @@ def updateInvestorTXs2(maxWorkers=14):
     print(f'Process success transaction of {len(investorAddresses)} investor')
     return True
 
-
-# fileName = os.path.basename(__file__)
-# start = time.time()
-# updateInvestorTXs2()
-# end = time.time()
-# print(int(end - start), f'sec to process {fileName}')
-# isFuturesWork()
-
-# investorDocs.delete_many(
-#     {'TXs.0' : {'$exists' : 0}}
-# )
-# for investorDoc in investorDocs.find({'TXs.0' : {'$exists' : 0}}):
-#     print(investorDoc['_id'])
-#     print(investorDoc['TXs'])

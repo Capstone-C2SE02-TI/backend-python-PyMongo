@@ -5,13 +5,13 @@ import time
 from datetime import date, timedelta, datetime
 
 keys = [
-    'investorTXs',
     'investorETHBalance',
+    'investorTXs',
     # 'investorERC20Balance'
 ]
 functions = [
-    updateInvestorTXs2,
     updateInvestorETHBalances,
+    updateInvestorTXs2,
     # updateInvestorERC20Balances
 ]
 

@@ -157,13 +157,6 @@ def coinPriceMinutelyHandler():
         time.sleep(2)
 
 
-fileName = os.path.basename(__file__)
-start = time.time()
-coinPriceMinutelyHandler()
-# coinPriceHandler()
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
-
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
 #     ts = int(unix/1000)
 #     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)

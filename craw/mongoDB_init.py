@@ -13,4 +13,13 @@ client = pymongo.MongoClient(connect_string)
 client = client['TRACKINGINVESTMENT_CRAWL']
 
 
+main_mongodb_password = os.environ['main_mongodb_password']
+main_mongodb_password = quote_plus(main_mongodb_password)
+
+main_connect_string = f'mongodb+srv://hdttuan:{main_mongodb_password}@trackinginvestmentmain.4hjg8pg.mongodb.net/TRACKINGINVESTMENT_MAIN?retryWrites=true&w=majority'
+mainClient = pymongo.MongoClient(main_connect_string)
+mainClient = mainClient['TRACKINGINVESTMENT_MAIN']
+
+
+
 

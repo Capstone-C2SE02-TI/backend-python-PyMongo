@@ -68,6 +68,8 @@ def updateInvestorETHBalances(maxWorkers = 10):
             )
             for investorAddress, ets_key in zip(investorAddresses, ets_keys)
         ]
+
+    
     multiETHBalanceResults = [ethBalanceResults.result() 
                                for ethBalanceResults in concurrent.futures.as_completed(multiETHBalanceResults)]
 
@@ -244,10 +246,5 @@ def updateInvestorERC20Balances(maxWorkers = 50):
     return True
 
 
-# fileName = os.path.basename(__file__)
-# start = time.time()
-# updateInvestorERC20Balances()
-# print(updateInvestorETHBalances())
-# end = time.time()
-# print(int(end - start), f'sec to process {fileName}')
+
 

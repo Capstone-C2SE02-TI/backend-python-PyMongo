@@ -29,16 +29,25 @@ def test():
 def getWalletsETHBalance(wallets, ets_key):
 
     wallets = ','.join(wallets)
-    balancesResult = requests.get(f'https://api.etherscan.io/api'
-                                  '?module=account'
-                                  '&action=balancemulti'
-                                  f'&address={wallets}'
-                                  '&tag=latest'
-                                  f'&apikey={ets_key}',
-                                  timeout=60
-                                  )
 
-    balancesResult = balancesResult.json()
+    balancesResult = {}
+    try: 
+        balancesResult = requests.get(f'https://api.etherscan.io/api'
+                                        '?module=account'
+                                        '&action=balancemulti'
+                                        f'&address={wallets}'
+                                        '&tag=latest'
+                                        f'&apikey={ets_key}',
+                                        timeout=60
+                                        )
+        
+
+        balancesResult = balancesResult.json()
+    except:
+        print(balancesResult)
+        return {'status' : -1}
+
+    balancesResult['status'] = 1
     return balancesResult
 
 
@@ -66,11 +75,18 @@ def updateInvestorETHBalances(maxWorkers = 10):
     countTest = 0
     for ETHBalanceResults in multiETHBalanceResults:
         countTest += 1
+
+        if ETHBalanceResults.get('status', -1) == -1:
+            print(ETHBalanceResult)
+            print('Status is -1')
+            return False
         for ETHBalanceResult in ETHBalanceResults['result']:
 
             if isinstance(ETHBalanceResult, str):
                 print(ETHBalanceResults)
                 return False
+
+            
             investorAddress = ETHBalanceResult['account']
 
             if len(ETHBalanceResult['balance']) <= 13:
@@ -186,6 +202,7 @@ def updateInvestorERC20Balances(maxWorkers = 50):
                 return False            
 
             if balanceResults.get('status',0) == 0:
+                print(balanceResults)
                 print('Nah, error so I gotta our of here')
                 return False
 

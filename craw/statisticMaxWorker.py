@@ -2,24 +2,23 @@ from investorCoinBalance import updateInvestorERC20Balances, updateInvestorETHBa
 from investorTXs import updateInvestorTXs2
 import json
 import time
-import concurrent.futures
 from datetime import date, timedelta, datetime
 
 keys = [
-    'investorERC20Balance',
+    'investorTXs',
     'investorETHBalance',
-    'investorTXs'
+    # 'investorERC20Balance'
 ]
 functions = [
-    updateInvestorERC20Balances,
+    updateInvestorTXs2,
     updateInvestorETHBalances,
-    updateInvestorTXs2
+    # updateInvestorERC20Balances
 ]
 
 
 def sortJson():
 
-    f = open('./max-worker-statistic.json')
+    f = open('../max-worker-statistic/max-worker-statistic.json')
     data = json.load(f)
     f.close()
 
@@ -34,13 +33,13 @@ def sortJson():
 
     json_object = json.dumps(newData, indent=4)
 
-    with open("./max-worker-statistic.json", "w") as outfile:
+    with open("../max-worker-statistic/max-worker-statistic.json", "w") as outfile:
         outfile.write(json_object)
 
 
 def writeToJson(key, maxWorkers, duration):
 
-    f = open('./max-worker-statistic.json')
+    f = open('../max-worker-statistic/max-worker-statistic.json')
     data = json.load(f)
 
     if str(maxWorkers) in data[key]:
@@ -53,7 +52,7 @@ def writeToJson(key, maxWorkers, duration):
 
     json_object = json.dumps(data, indent=4)
 
-    with open("./max-worker-statistic.json", "w") as outfile:
+    with open("../max-worker-statistic/max-worker-statistic.json", "w") as outfile:
         outfile.write(json_object)
 
 
@@ -65,12 +64,16 @@ def statisticMaxWorker():
             functionName = function.__name__
 
             if functionName == 'updateInvestorERC20Balances':
-                startRange = 100
+                startRange = 202
+                endRange = 114
+                step = -2
                 sleepTime = 10
             else:
-                startRange = 20
-                sleepTime = 60
-            for maxWorkers in range(startRange, 1, -1):
+                startRange = 16
+                endRange = 6
+                step = -2
+                sleepTime = 120
+            for maxWorkers in range(startRange, endRange, step):
 
                 start = int(time.time())
                 startConvert = datetime.fromtimestamp(start).strftime('%d-%m-%Y %H:%M:%S')

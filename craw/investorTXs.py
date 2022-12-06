@@ -28,15 +28,21 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
 
     pages = 1
     offset = 10000
-    newTXs = requests.get('https://api.etherscan.io/api?module=account&action=tokentx&'
-                          f'address={investorAddress}&'
-                          f'page={pages}&'
-                          f'offset={offset}&'
-                          f'startblock={startBlock}&'
-                          f'endblock={curBlock}&'
-                          'sort=asc&'
-                          f'apikey={ets_key}',
-                          timeout=60)
+    try:
+        newTXs = requests.get('https://api.etherscan.io/api?module=account&action=tokentx&'
+                            f'address={investorAddress}&'
+                            f'page={pages}&'
+                            f'offset={offset}&'
+                            f'startblock={startBlock}&'
+                            f'endblock={curBlock}&'
+                            'sort=asc&'
+                            f'apikey={ets_key}',
+                            timeout=60)
+    except:
+        print(
+            f'Get TXs fail of {investorAddress} with time out')
+
+        return {'status' : '-1'}
     # print(newTXs.json())
     if newTXs.json()['status'] == '1' or newTXs.status_code == 200:
         newTXs = newTXs.json()
@@ -44,7 +50,7 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
     else:
         print(
             f'Get TXs fail of {investorAddress} with status code {newTXs.status_code}')
-        return {}
+        return {'status' : '-1'}
 
     # print(f'Crawling new TXs of {investorAddress} successfully')
     return newTXs
@@ -117,9 +123,16 @@ def updateInvestorTXs2(maxWorkers=14):
             if response.result().get('result', []) == []:
                 continue
 
-            if response.result().get('status', 0) == 0:
+            if response.result().get('status', '-1') == '-1':
                 return False
 
+            if response.result().get('status') == '0':
+                print(response.result())
+                if response.result()['status'].get('message', 'NOTOK') == 'NOTOK':
+                    return False
+                continue
+
+            
             investorAddress = response.result()['investorAddress']
             TXsResult = response.result()['result']
             # investorDocs.update_one(

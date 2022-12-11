@@ -1,8 +1,8 @@
-from mongoDB_init import mainClient, client
+from mongoDB_init import mainClient, crawlClient
 import re
-
+from utils import logExecutionTime
 main_userDocs = mainClient['users']
-crawl_investorDocs = client['investors']
+crawl_investorDocs = crawlClient['investors']
 
 
 
@@ -10,42 +10,47 @@ def isAddressExisted(address):
 
     isExisted = False
 
-    for _ in crawl_investorDocs.find({'_id':address}):
+    for _ in crawl_investorDocs.find({'_id':address},{}):
         isExisted = True
 
     return isExisted
-        
+
 def addNewAddressHandler():
     findFilter = {'addedSharks.0' : {'$exists' : True}}
     projection = {'addedSharks' : 1, 'userId' : 1}
+    r = re.compile(r'^0x[a-fA-F0-9]{40}$')
+
+    validatedETHAddresses = {}
     for main_userDoc in main_userDocs.find(findFilter, projection):
 
-        addedAddresses = main_userDoc['addedSharks']
+        addresses = main_userDoc['addedSharks']
         
-        r = re.compile(r'^0x[a-fA-F0-9]{40}$')
-        validatedAddresses = list(filter(r.match, addedAddresses)) 
+        ETHAddresses = set(filter(r.match, addresses)) 
         
-        for address in validatedAddresses:
-            if not isAddressExisted(address):
-                crawl_investorDocs.insert_one(
-                    {
-                        '_id' : address,
-                        'coins' : {},
-                        'TXs' : [],
-                        'is_shark' : [],
-                        'snapshots' : {},
-                        'latestBlockNumber' : 0
-                    }
-                )
+        validatedETHAddresses = validatedETHAddresses.union(ETHAddresses)
+    
+    for address in validatedETHAddresses:
+        if isAddressExisted(address):
+            print(f'Duplicate {address}')
+            continue
 
-                print(f'Welcome newbie {address}')
-            else:
-                print(f'Duplicate {address}')
+        crawl_investorDocs.insert_one(
+            {
+                '_id' : address,
+                'coins' : {},
+                'TXs' : [],
+                'is_shark' : False,
+                'snapshots' : {},
+                'latestBlockNumber' : 0
+            }
+        )
 
-crawl_investorDocs.delete_one(
-    {'_id' : '0x28c6c06298d514db089934071355e5743bf21d60'}
-)
-addNewAddressHandler()
+        print(f'Welcome newbie {address}')
+
+
+if __name__ == '__main__':
+    function = addNewAddressHandler
+    logExecutionTime(function)
 
 
 

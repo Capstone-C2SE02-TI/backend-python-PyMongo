@@ -27,7 +27,7 @@ start = time.time()
 with concurrent.futures.ThreadPoolExecutor() as executorLevel1:
     for pyFile in zipAll:
         executorLevel1.submit(pyFile)
-coinDataHandler()
+# coinDataHandler()
 
 end = time.time()
 print(int(end - start), f'sec to process {fileName}')

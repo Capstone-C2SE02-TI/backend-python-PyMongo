@@ -1,12 +1,12 @@
 import requests
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
-from mongoDB_init import client
+from mongoDB_init import crawlClient
 import time
 from datetime import date, timedelta, datetime
 import os
-
-coinTestDocs = client['coins']
+from utils import logExecutionTime
+coinTestDocs = crawlClient['coins']
 
 def delPricesField():
 
@@ -157,6 +157,9 @@ def coinPriceMinutelyHandler():
         time.sleep(2)
 
 
+if __name__ == '__main__':
+    function = coinPriceMinutelyHandler
+    logExecutionTime(function)
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
 #     ts = int(unix/1000)
 #     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)

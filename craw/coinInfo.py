@@ -1,18 +1,15 @@
-from mongoDB_init import client
-from requests import Session
+from mongoDB_init import crawlClient
 import requests
-
-from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
-
 import json
 import time
-
+import concurrent.futures
+from utils import logExecutionTime
 # env variable pre-handler
 from dotenv import load_dotenv
 import os
 load_dotenv()
 
-coinTestDocs = client['coins']
+coinTestDocs = crawlClient['coins']
 
 cmc_keys = os.environ['cmc_keys']
 cmc_keys = [i.strip() for i in cmc_keys.split(',')]
@@ -108,18 +105,20 @@ def getCoinData(id):
 def coinDataHandler():
 
     projection = {'_id' : 1, 'last_updated' : 1}
-    for coinDoc in coinTestDocs.find({}, projection):
 
-        
-        idCoin = coinDoc['_id']
-        
-        print(f'Get data of {idCoin}')
-        coinData = getCoinData(idCoin)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for coinDoc in coinTestDocs.find({}, projection):
 
-        coinTestDocs.update_one(
-            {'_id' : idCoin},
-            {'$set' : coinData}
-        )
+            idCoin = coinDoc['_id']
+            print(f'Get data of {idCoin}')
+            coinData = getCoinData(idCoin)
 
-        print(f'Get data success of {idCoin}')
-        time.sleep(2)
+            executor.submit( coinTestDocs.update_one,{'_id' : idCoin},{'$set' : coinData})
+
+            print(f'Get data success of {idCoin}')
+            time.sleep(2)
+
+
+if __name__ == '__main__':
+    function = coinDataHandler
+    logExecutionTime(function)

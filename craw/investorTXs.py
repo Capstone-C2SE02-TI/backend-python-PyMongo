@@ -1,5 +1,6 @@
 import concurrent.futures
-from mongoDB_init import client
+from utils import logExecutionTime
+from mongoDB_init import crawlClient
 from web3 import Web3
 import requests
 from dotenv import load_dotenv
@@ -7,7 +8,7 @@ import os
 import time
 load_dotenv()
 
-investorDocs = client['investors']
+investorDocs = crawlClient['investors']
 
 ets_keys = os.environ['ets_keys']
 ets_keys = [i.strip() for i in ets_keys.split(',')]
@@ -30,27 +31,27 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
     offset = 10000
     try:
         newTXs = requests.get('https://api.etherscan.io/api?module=account&action=tokentx&'
-                            f'address={investorAddress}&'
-                            f'page={pages}&'
-                            f'offset={offset}&'
-                            f'startblock={startBlock}&'
-                            f'endblock={curBlock}&'
-                            'sort=asc&'
-                            f'apikey={ets_key}',
-                            timeout=60)
+                              f'address={investorAddress}&'
+                              f'page={pages}&'
+                              f'offset={offset}&'
+                              f'startblock={startBlock}&'
+                              f'endblock={curBlock}&'
+                              'sort=asc&'
+                              f'apikey={ets_key}',
+                              timeout=60)
     except:
         print(
             f'Get TXs fail of {investorAddress} with time out')
 
-        return {'status' : '-1'}
+        return {'status': '-1'}
     # print(newTXs.json())
-    if newTXs.json().get('status',-1) == '1' or newTXs.status_code == 200:
+    if newTXs.json().get('status', -1) == '1' or newTXs.status_code == 200:
         newTXs = newTXs.json()
         newTXs['investorAddress'] = investorAddress
     else:
         print(
             f'Get TXs fail of {investorAddress} with status code {newTXs.status_code}')
-        return {'status' : '-1'}
+        return {'status': '-1'}
 
     # print(f'Crawling new TXs of {investorAddress} successfully')
     return newTXs
@@ -99,24 +100,31 @@ def updateInvestorTXs2(maxWorkers=5):
         investorAddresses.append(investorDoc['_id'])
         latestBlocks.append(investorDoc['latestBlockNumber'])
 
-    print(f'Process transaction of {len(investorAddresses)} investor')
+    print(f'1/ Process transaction of {len(investorAddresses)} investor')
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=maxWorkers) as executor:
             results = [executor.submit(getInvestorTXs, latestBlock, curBlock, ets_key, investorAddress)
                        for latestBlock, ets_key, investorAddress in zip(latestBlocks, ets_keys, investorAddresses)]
+
+            print('start waiting')
+            futureWaited = concurrent.futures.wait(
+                results, return_when=concurrent.futures.FIRST_COMPLETED)
+
+            while futureWaited.not_done.__len__() != 0:
+                print(f'Have {futureWaited.not_done.__len__()} left')
+
+                time.sleep(2)
+                futureWaited = concurrent.futures.wait(
+                    results, return_when=concurrent.futures.FIRST_COMPLETED)
     except:
         print("Error in multi thread crawling TXs of Investors")
         return False
 
     newLatestBlock = curBlock
 
-    waiTest = concurrent.futures.wait(
-        results, return_when="ALL_COMPLETED")
+    print(f'2/ Update transaction of {len(investorAddresses)} investor')
 
-    if waiTest.not_done.__len__() != 0:
-        print("All the futures not done yet!")
-        return False
-
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=20)
     for response in concurrent.futures.as_completed(results):
 
         try:
@@ -124,20 +132,21 @@ def updateInvestorTXs2(maxWorkers=5):
                 return False
 
             if response.result().get('status') == '0':
-                print(response.result())
                 if response.result().get('message', 'NOTOK') == 'NOTOK':
                     return False
                 continue
-            
+
             if response.result().get('result', []) == []:
                 continue
+        except:
+            print(f'Some field gone wrong in below:')
+            print(response.result())
 
-            
-
-            
+        try:
             investorAddress = response.result()['investorAddress']
             TXsResult = response.result()['result']
-            investorDocs.update_one(
+            executor.submit(
+                investorDocs.update_one,
                 {'_id': investorAddress},
                 {
                     '$push': {
@@ -149,11 +158,19 @@ def updateInvestorTXs2(maxWorkers=5):
                         'latestBlockNumber': newLatestBlock
                     }
                 }
+
             )
+
         except:
             print(f'Update TXs fail in {investorAddress}')
             print(response.result())
             return False
 
+    executor.shutdown()
     print(f'Process success transaction of {len(investorAddresses)} investor')
     return True
+
+
+if __name__ == '__main__':
+    function = updateInvestorTXs2
+    logExecutionTime(function)

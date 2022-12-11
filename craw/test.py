@@ -1,3 +1,11 @@
-from coinPrice import coinPriceMinutelyHandler
+from mongoDB_init import crawlClient
 
-coinPriceMinutelyHandler()
+
+
+coinDocs = crawlClient['coins']
+
+print(coinDocs.update_one(
+    {'symbol' : 'raca'},
+    {'$set' : {'sumInvest' : 1}}
+).modified_count)
+

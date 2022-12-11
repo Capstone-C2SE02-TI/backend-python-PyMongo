@@ -2,12 +2,13 @@ import concurrent.futures
 import os
 from cmath import exp
 import requests
-from mongoDB_init import client
+from mongoDB_init import crawlClient
 from dotenv import load_dotenv
 load_dotenv()
+from utils import logExecutionTime
 
-investorDocs = client['investors']
-coinTestDocs = client['coins']
+investorDocs = crawlClient['investors']
+coinTestDocs = crawlClient['coins']
 
 ets_keys = os.environ['ets_keys']
 ets_keys = [key.strip() for key in ets_keys.split(',')]
@@ -242,6 +243,8 @@ def updateInvestorERC20Balances(maxWorkers = 100):
             # print(f'Update No.{updateCount} success.', investorAddress)
     return True
 
-
+if __name__ == '__main__':
+    function = updateInvestorETHBalances
+    logExecutionTime(function)
 
 

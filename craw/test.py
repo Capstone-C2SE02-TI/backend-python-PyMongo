@@ -1,7 +1,3 @@
-from mongoDB_init import mainClient
+from coinPrice import coinPriceMinutelyHandler
 
-userDocs = mainClient['tokens']
-
-
-for userDoc in userDocs.find():
-    print(userDoc['_id'])
+coinPriceMinutelyHandler()

@@ -87,7 +87,7 @@ def isFuturesWork():
             return
 
 
-def updateInvestorTXs2(maxWorkers=14):
+def updateInvestorTXs2(maxWorkers=5):
 
     infura_key = infura_keys[0]
     curBlock = getCurBlock(infura_key)
@@ -120,34 +120,36 @@ def updateInvestorTXs2(maxWorkers=14):
     for response in concurrent.futures.as_completed(results):
 
         try:
-            if response.result().get('result', []) == []:
-                continue
-
             if response.result().get('status', '-1') == '-1':
                 return False
 
             if response.result().get('status') == '0':
                 print(response.result())
-                if response.result()['status'].get('message', 'NOTOK') == 'NOTOK':
+                if response.result().get('message', 'NOTOK') == 'NOTOK':
                     return False
                 continue
+            
+            if response.result().get('result', []) == []:
+                continue
+
+            
 
             
             investorAddress = response.result()['investorAddress']
             TXsResult = response.result()['result']
-            # investorDocs.update_one(
-            #     {'_id': investorAddress},
-            #     {
-            #         '$push': {
-            #             'TXs': {
-            #                 '$each': response.result()['result']
-            #             }
-            #         },
-            #         '$set': {
-            #             'latestBlockNumber': newLatestBlock
-            #         }
-            #     }
-            # )
+            investorDocs.update_one(
+                {'_id': investorAddress},
+                {
+                    '$push': {
+                        'TXs': {
+                            '$each': TXsResult
+                        }
+                    },
+                    '$set': {
+                        'latestBlockNumber': newLatestBlock
+                    }
+                }
+            )
         except:
             print(f'Update TXs fail in {investorAddress}')
             print(response.result())
@@ -155,4 +157,3 @@ def updateInvestorTXs2(maxWorkers=14):
 
     print(f'Process success transaction of {len(investorAddresses)} investor')
     return True
-

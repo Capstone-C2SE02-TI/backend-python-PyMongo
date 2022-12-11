@@ -33,7 +33,6 @@ def investorTotalAssetSnapshot():
     ms = datetime.datetime.now()
     currentTimestamp = str(int(time.mktime(ms.timetuple()) ))
     
-    print(priceBySymbol)
     projection = {'coins' : 1, '_id' : 1}
     for investorDoc in investorDocs.find({},projection):
         investorAddress = investorDoc['_id']
@@ -78,4 +77,3 @@ def updateSharkStatus():
             {'_id' : investorDoc['_id']},
             {'$set' : {'is_shark' : sharkStatus}}
         )
-

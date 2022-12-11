@@ -88,10 +88,10 @@ def getCoinPriceByRange(id, fromSecUnix, toSecUnix):
 
 def coinPriceHandler():
 
-    intervals = ['daily', 'hourly', 'minutely']
-    dayss = ['max', '90', '1']
-    # intervals = ['daily', 'hourly']
-    # dayss = ['10', '10']
+    # intervals = ['daily', 'hourly', 'minutely']
+    # dayss = ['max', '90', '1']
+    intervals = ['daily', 'hourly']
+    dayss = ['1', '1']
 
     coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
     for coinId in coinIds:

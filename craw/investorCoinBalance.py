@@ -1,10 +1,7 @@
-import asyncio
 import concurrent.futures
-import json
 import os
 from cmath import exp
 import requests
-import time
 from mongoDB_init import client
 from dotenv import load_dotenv
 load_dotenv()
@@ -26,6 +23,7 @@ def test():
     for invest in investorDocs.find({},{'_id' : 1}):
         print(invest['_id'])
         break
+    
 def getWalletsETHBalance(wallets, ets_key):
 
     wallets = ','.join(wallets)
@@ -51,7 +49,7 @@ def getWalletsETHBalance(wallets, ets_key):
     return balancesResult
 
 
-def updateInvestorETHBalances(maxWorkers = 10):
+def updateInvestorETHBalances(maxWorkers = 5):
     chunkSize = 20
 
     investorAddresses = [investorDoc['_id']
@@ -74,31 +72,30 @@ def updateInvestorETHBalances(maxWorkers = 10):
                                for ethBalanceResults in concurrent.futures.as_completed(multiETHBalanceResults)]
 
     fractionDigits = 5
-    countTest = 0
     for ETHBalanceResults in multiETHBalanceResults:
-        countTest += 1
 
         if ETHBalanceResults.get('status', -1) == -1:
             print(ETHBalanceResult)
             print('Status is -1')
             return False
+
         for ETHBalanceResult in ETHBalanceResults['result']:
 
             if isinstance(ETHBalanceResult, str):
-                print(ETHBalanceResults)
+                print('ETHBalanceResult is str instance',ETHBalanceResults)
                 return False
-
             
             investorAddress = ETHBalanceResult['account']
 
             if len(ETHBalanceResult['balance']) <= 13:
+                print(investorAddress)
                 continue
             
             ETHBalance = float(ETHBalanceResult['balance'][:-13])/(10**fractionDigits)
-            # investorDocs.update_one(
-            #     {'_id' : investorAddress},
-            #     {'$set' : {'coins.eth' : ETHBalance} }
-            # )    
+            investorDocs.update_one(
+                {'_id' : investorAddress},
+                {'$set' : {'coins.eth' : ETHBalance} }
+            )    
     return True
 
 
@@ -139,7 +136,7 @@ def getInvestorsERC20Balance(investorAddress, contractAddresses, alchemy_key):
     return balancesResult
 
 
-def updateInvestorERC20Balances(maxWorkers = 50):
+def updateInvestorERC20Balances(maxWorkers = 100):
 
     contractAddresses, symbols, decimals = [], [], []
     filter = {'asset_platform_id' : {'$ne' : None}}
@@ -229,18 +226,18 @@ def updateInvestorERC20Balances(maxWorkers = 50):
 
            
             
-            # if investorAddress not in balanceUpdated:
-            #     investorDocs.update_one(
-            #         {'_id': investorAddress},
-            #         [{'$set': {'coins' : {'$literal': {}}}},{'$set': coinBalances}]
-            #     )
+            if investorAddress not in balanceUpdated:
+                investorDocs.update_one(
+                    {'_id': investorAddress},
+                    [{'$set': {'coins' : {'$literal': {}}}},{'$set': coinBalances}]
+                )
 
-            #     balanceUpdated[investorAddress] = True
-            # else:
-            #     investorDocs.update_one(
-            #         {'_id': investorAddress},
-            #         {'$set': coinBalances}
-            #     )
+                balanceUpdated[investorAddress] = True
+            else:
+                investorDocs.update_one(
+                    {'_id': investorAddress},
+                    {'$set': coinBalances}
+                )
 
             # print(f'Update No.{updateCount} success.', investorAddress)
     return True

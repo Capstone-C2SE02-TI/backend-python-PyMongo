@@ -76,8 +76,8 @@ def getCoinData(id):
         'community_data' : False,
         'developer_data' : False,
         'sparkline' : False
-
     }
+    
     COIN_ID_API_URL = f'https://api.coingecko.com/api/v3/coins/{id}'
 
     statusCode = -1

@@ -1,8 +1,13 @@
 import time
+from datetime import datetime
 from mongoDB_init import crawlClient
 import json
 
+def getCurrentDateTime():
+    secUnix = time.time()
+    return datetime.fromtimestamp(secUnix).strftime('%d-%m-%Y %H:%M:%S')
 
+    
 def logExecutionTime(function):
     functionName = function.__name__
 
@@ -22,23 +27,21 @@ def logExecutionTime(function):
     return executionDuration
 
 
-def addExecutionTime(function, executionTime = '3'):
-
-    # functionName = function.__name__
-    functionName = 'coinDataHandler'
+def addExecutionTime(functionName, executionTime = '3'):
+    
+    currentSecUnix = int(time.time())
     try:
         readFile = open(f'../execution-time-statistic/{functionName}.json','r')
         print(f'Open {readFile.name} success')
     except FileNotFoundError:
         print(f'Dont have {functionName} execution time statistic file, now create it!')
         with open(f'../execution-time-statistic/{functionName}.json','w') as initFile:
-            initFile.write("[]")
+            initFile.write("{}")
         readFile = open(f'../execution-time-statistic/{functionName}.json','r')
         
     executionTimes = json.load(readFile)
     readFile.close()
-    executionTimes.append(executionTime)
-    print(executionTimes)
+    executionTimes[currentSecUnix] = executionTime
 
     json_object = json.dumps(executionTimes, indent=4)
     with open(f'../execution-time-statistic/{functionName}.json','w') as initFile:
@@ -81,4 +84,4 @@ def refreshInvestorAddresses():
 
 
 if __name__ == '__main__':
-    addExecutionTime(3)
+    print(getCurrentDateTime())

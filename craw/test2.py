@@ -11,5 +11,3 @@ def initPricesField():
             {"$set" : {'a' : 3}}
     )
 
-
-initPricesField()

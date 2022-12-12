@@ -1,7 +1,7 @@
-from mongoDB_init import client
-
-coinDocs = client['coins']
-investorDocs = client['investors']
+from mongoDB_init import crawlClient
+from utils import logExecutionTime, isExistedCoinSymbol
+coinDocs = crawlClient['coins']
+investorDocs = crawlClient['investors']
 
 
 def getSumInvestBySymbol():
@@ -34,7 +34,9 @@ def UpdateCoinSumInvest():
             {'$set' : {'sumInvest' : sumInvest}}
         )
 
-        if updateResult.modified_count == 1:
-            print(f'Update sum invest of {symbol} is {sumInvest}')
+        if updateResult.modified_count == 0:
+            print(f'Cant update sum invest in {symbol}. Sum invest = {sumInvest}')
 
-UpdateCoinSumInvest()
+if __name__ == '__main__':
+    function = UpdateCoinSumInvest
+    logExecutionTime(function)

@@ -5,13 +5,13 @@ import time
 from datetime import date, timedelta, datetime
 
 keys = [
-    'investorTXs',
     'investorETHBalance',
+    'investorTXs',
     # 'investorERC20Balance'
 ]
 functions = [
-    updateInvestorTXs2,
     updateInvestorETHBalances,
+    updateInvestorTXs2,
     # updateInvestorERC20Balances
 ]
 
@@ -56,6 +56,20 @@ def writeToJson(key, maxWorkers, duration):
         outfile.write(json_object)
 
 
+def getPramByName(functionName):
+    if functionName == 'updateInvestorERC20Balances':
+        startRange = 202
+        endRange = 114
+        step = -2
+        sleepTime = 10
+    else:
+        startRange = 16
+        endRange = 6
+        step = -2
+        sleepTime = 120
+
+    return startRange,endRange,step,sleepTime
+
 def statisticMaxWorker():
 
     while True:
@@ -63,16 +77,8 @@ def statisticMaxWorker():
 
             functionName = function.__name__
 
-            if functionName == 'updateInvestorERC20Balances':
-                startRange = 202
-                endRange = 114
-                step = -2
-                sleepTime = 10
-            else:
-                startRange = 16
-                endRange = 6
-                step = -2
-                sleepTime = 120
+            startRange,endRange,step,sleepTime = getPramByName(functionName)
+
             for maxWorkers in range(startRange, endRange, step):
 
                 start = int(time.time())

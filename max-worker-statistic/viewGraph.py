@@ -41,12 +41,28 @@ for fileName in data:
 
     xs = []
     ys = []
+
+    xMin = 999
+    yMin = 999
     for maxWorkers,times in data[fileName].items():
         xs.append(int(maxWorkers))
-        ys.append(int(mean(times)))
-        print(times, int(maxWorkers), int(mean(times)))
-    
-    ax1.plot(xs, ys,label = 'ratio')
+
+        meanTimes = mean(times)
+        ys.append(meanTimes)
+
+        if yMin > meanTimes:
+            yMin = meanTimes
+            xMin = int(maxWorkers)
+
+
+    print(f'Min time to crawl {fileName} is {yMin}, at Max Workers = {xMin}')
+
+
+    ax1.plot(xs, ys)
+    ax1.plot(xMin,yMin,'r*')
+    plt.title(f'Time to crawl {fileName}')
+    plt.legend(['time'])
+    plt.xlabel('Max workers')
     plt.savefig(fileName)
     plt.show()
     

@@ -1,12 +1,12 @@
 import requests
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
-from mongoDB_init import client
+from mongoDB_init import crawlClient
 import time
 from datetime import date, timedelta, datetime
 import os
-
-coinTestDocs = client['coins']
+from utils import logExecutionTime
+coinTestDocs = crawlClient['coins']
 
 def delPricesField():
 
@@ -88,10 +88,10 @@ def getCoinPriceByRange(id, fromSecUnix, toSecUnix):
 
 def coinPriceHandler():
 
-    intervals = ['daily', 'hourly', 'minutely']
-    dayss = ['max', '90', '1']
-    # intervals = ['daily', 'hourly']
-    # dayss = ['10', '10']
+    # intervals = ['daily', 'hourly', 'minutely']
+    # dayss = ['max', '90', '1']
+    intervals = ['daily', 'hourly']
+    dayss = ['1', '1']
 
     coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
     for coinId in coinIds:
@@ -157,13 +157,9 @@ def coinPriceMinutelyHandler():
         time.sleep(2)
 
 
-fileName = os.path.basename(__file__)
-start = time.time()
-coinPriceMinutelyHandler()
-# coinPriceHandler()
-end = time.time()
-print(int(end - start), f'sec to process {fileName}')
-
+if __name__ == '__main__':
+    function = coinPriceMinutelyHandler
+    logExecutionTime(function)
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
 #     ts = int(unix/1000)
 #     print(datetime.fromtimestamp(ts).strftime('%d-%m-%Y %H:%M:%S'),price)

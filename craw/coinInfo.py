@@ -3,17 +3,13 @@ import requests
 import json
 import time
 import concurrent.futures
-from utils import logExecutionTime
+from utils import logExecutionTime, addExecutionTime
 # env variable pre-handler
 from dotenv import load_dotenv
 import os
 load_dotenv()
 
 coinTestDocs = crawlClient['coins']
-
-cmc_keys = os.environ['cmc_keys']
-cmc_keys = [i.strip() for i in cmc_keys.split(',')]
-
 
 def newCoinIdHandler():
 
@@ -121,4 +117,7 @@ def coinDataHandler():
 
 if __name__ == '__main__':
     function = coinDataHandler
-    logExecutionTime(function)
+    executionTime = logExecutionTime(function)
+    addExecutionTime(coinDataHandler,executionTime)
+
+

@@ -7,12 +7,42 @@ def logExecutionTime(function):
     functionName = function.__name__
 
     start = time.time()
-    function()
-    end = time.time()
+    penaltyTime = 0
+    try:
+        function()
+    except:
+        print(f'{functionName} got error!')
+        penaltyTime = 600
+
+    end = time.time() + penaltyTime
 
     executionDuration = int(end-start)
-    print(f'{functionName} take {executionDuration}s')
+    print(f'{functionName} take {executionDuration}s. With penalty Time = {penaltyTime}')
 
+    return executionDuration
+
+
+def addExecutionTime(function, executionTime = '3'):
+
+    # functionName = function.__name__
+    functionName = 'coinDataHandler'
+    try:
+        readFile = open(f'../execution-time-statistic/{functionName}.json','r')
+        print(f'Open {readFile.name} success')
+    except FileNotFoundError:
+        print(f'Dont have {functionName} execution time statistic file, now create it!')
+        with open(f'../execution-time-statistic/{functionName}.json','w') as initFile:
+            initFile.write("[]")
+        readFile = open(f'../execution-time-statistic/{functionName}.json','r')
+        
+    executionTimes = json.load(readFile)
+    readFile.close()
+    executionTimes.append(executionTime)
+    print(executionTimes)
+
+    json_object = json.dumps(executionTimes, indent=4)
+    with open(f'../execution-time-statistic/{functionName}.json','w') as initFile:
+        initFile.write(json_object)
 
 def isExistedCoinSymbol(symbol):
     file = open('./utils/coinSymbols.json')
@@ -49,5 +79,6 @@ def refreshInvestorAddresses():
         outfile.write(json_object)
 
 
+
 if __name__ == '__main__':
-    refreshInvestorAddresses()
+    addExecutionTime(3)

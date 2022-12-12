@@ -1,4 +1,5 @@
 import requests
+import concurrent.futures
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
 from mongoDB_init import crawlClient
@@ -133,12 +134,31 @@ def coinPriceMinutelyHandler():
 
     fromSecUnix = currentTimestamp - intervalsBySec['minutely']
     toSecUnix = currentTimestamp
+    
+    def getExecutionTime(function):
+        
+        functionName = function.__name__
 
+        start = time.time()
+        penaltyTime = 0
+        try:
+            returnData = function()
+        except:
+            print(f'{functionName} got error!')
+            penaltyTime = 600
+
+        end = time.time() + penaltyTime
+
+        executionDuration = int(end-start)
+        print(f'{functionName} take {executionDuration}s. With penalty Time = {penaltyTime}')
+
+        return returnData
+
+
+    updateExecution = concurrent.futures.ThreadPoolExecutor(max_workers=20)
     for coinDoc in coinTestDocs.find({}, {'_id' : 1}):
 
         coinId = coinDoc['_id']
-
-        print(f'Getting price minutely for {coinId}')
         coinPrice = getCoinPriceByRange(coinId, fromSecUnix, toSecUnix)
 
         priceUpdate = {}
@@ -149,14 +169,17 @@ def coinPriceMinutelyHandler():
         
         if priceUpdate == {}:
             continue
-
-        coinTestDocs.update_one(
+        
+        updateExecution.submit(
+            coinTestDocs.update_one,
             {'_id': coinId},
             {'$set': priceUpdate}
         )
         print(f'Get price minutely success for {coinId}')
 
         time.sleep(2)
+    
+    updateExecution.shutdown()
 
 
 if __name__ == '__main__':

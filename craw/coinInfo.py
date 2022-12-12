@@ -11,27 +11,27 @@ load_dotenv()
 
 coinTestDocs = crawlClient['coins']
 
+
 def newCoinIdHandler():
 
     f = open('coinId.json')
-  
-    # returns JSON object as 
+
+    # returns JSON object as
     # a dictionary
     data = json.load(f)
-    
+
     # Iterating through the json
     # list
     getIdAPI = 'https://api.coingecko.com/api/v3/coins/'
-    coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({},{'_id' : 1})]
+    coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
     for i in data:
-    
+
         coinId = i['id']
         if coinId in coinIds:
             continue
 
         statusCode = -1
         while statusCode != 200:
-
 
             print(f'Test isCoin : {coinId}')
             response = requests.get(f'{getIdAPI}{coinId}')
@@ -46,37 +46,37 @@ def newCoinIdHandler():
                 time.sleep(70)
 
                 print(response.status_code)
-                continue    
+                continue
 
             response = response.json()
             if response['asset_platform_id'] == None:
 
-                
                 coinTestDocs.insert_one(
-                    {'_id' : coinId},
+                    {'_id': coinId},
                 )
 
                 print(f'Test isCoin success : {coinId}')
 
         time.sleep(2)
 
+
 def getCoinData(id):
 
     parameter = {
-        'localization' : False,
-        'tickers' : False,
-        'market_data' : True,
-        'community_data' : False,
-        'developer_data' : False,
-        'sparkline' : False
+        'localization': False,
+        'tickers': False,
+        'market_data': True,
+        'community_data': False,
+        'developer_data': False,
+        'sparkline': False
     }
-    
+
     COIN_ID_API_URL = f'https://api.coingecko.com/api/v3/coins/{id}'
 
     statusCode = -1
     while statusCode != 200:
 
-        time.sleep( (statusCode != -1) * 70)
+        time.sleep((statusCode != -1) * 70)
 
         print(f'Crawl data for {id}')
         response = requests.get(COIN_ID_API_URL, params=parameter)
@@ -95,12 +95,10 @@ def getCoinData(id):
 
     return coinData
 
-    
-
 
 def coinDataHandler():
 
-    projection = {'_id' : 1, 'last_updated' : 1}
+    projection = {'_id': 1, 'last_updated': 1}
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for coinDoc in coinTestDocs.find({}, projection):
@@ -109,7 +107,11 @@ def coinDataHandler():
             print(f'Get data of {idCoin}')
             coinData = getCoinData(idCoin)
 
-            executor.submit( coinTestDocs.update_one,{'_id' : idCoin},{'$set' : coinData})
+            executor.submit(
+                coinTestDocs.update_one,
+                {'_id': idCoin},
+                {'$set': coinData}
+            )
 
             print(f'Get data success of {idCoin}')
             time.sleep(2)
@@ -118,6 +120,4 @@ def coinDataHandler():
 if __name__ == '__main__':
     function = coinDataHandler
     executionTime = logExecutionTime(function)
-    addExecutionTime(coinDataHandler,executionTime)
-
-
+    addExecutionTime(coinDataHandler, executionTime)

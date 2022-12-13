@@ -6,7 +6,7 @@ from mongoDB_init import crawlClient
 import time
 from datetime import date, timedelta, datetime
 import os
-from utils import logExecutionTime
+from utils import logExecutionTime,getCurrentDateTime
 coinTestDocs = crawlClient['coins']
 
 def delPricesField():
@@ -78,10 +78,10 @@ def getCoinPriceByRange(id, fromSecUnix, toSecUnix):
             return []
 
         if statusCode != 200:
-            print(f'Now sleep for 70 Secs : {int(time.time())}')
+            print(f'Now sleep for 70 Secs : {getCurrentDateTime()}')
             print(statusCode)
             time.sleep(70)
-            print(f'Done sleep, let continue! : {int(time.time())}')
+            print(f'Done sleep, let continue! : {getCurrentDateTime()}')
             continue
 
     return response.json()['prices']
@@ -134,26 +134,6 @@ def coinPriceMinutelyHandler():
 
     fromSecUnix = currentTimestamp - intervalsBySec['minutely']
     toSecUnix = currentTimestamp
-    
-    def getExecutionTime(function):
-        
-        functionName = function.__name__
-
-        start = time.time()
-        penaltyTime = 0
-        try:
-            returnData = function()
-        except:
-            print(f'{functionName} got error!')
-            penaltyTime = 600
-
-        end = time.time() + penaltyTime
-
-        executionDuration = int(end-start)
-        print(f'{functionName} take {executionDuration}s. With penalty Time = {penaltyTime}')
-
-        return returnData
-
 
     updateExecution = concurrent.futures.ThreadPoolExecutor(max_workers=20)
     for coinDoc in coinTestDocs.find({}, {'_id' : 1}):

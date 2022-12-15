@@ -9,14 +9,14 @@ from coinSumInvestment import UpdateCoinSumInvest
 from investorCoinBalance import updateInvestorERC20Balances, updateInvestorETHBalances
 from investorTotalAsset import investorTotalAssetSnapshot, updateSharkStatus
 from investorTXs import updateInvestorTXs2
-from utils import logExecutionTime, addExecutionTime
+from utils import logExecutionTime, addExecutionTime, refreshCoinSymbol, refreshInvestorAddresses
 
 coingecko1 = [coinPriceMinutelyHandler]
 coingecko2 = [coinDataHandler]
 alchemy = [updateInvestorERC20Balances]
 etherscan = [updateInvestorTXs2, updateInvestorETHBalances]
 normal = [investorTotalAssetSnapshot, UpdateCoinSumInvest, updateSharkStatus]
-other = []
+other = [refreshCoinSymbol, refreshInvestorAddresses]
 zipAll = alchemy + etherscan + normal + other
 
 

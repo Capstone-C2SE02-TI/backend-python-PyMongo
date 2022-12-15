@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from mongoDB_init import crawlClient
 import json
+import random
 
 def getCurrentDateTime():
     secUnix = time.time()
@@ -81,7 +82,12 @@ def refreshInvestorAddresses():
     with open('./utils/investorAddresses.json', 'w') as outfile:
         outfile.write(json_object)
 
+def getRandomUserAgent():
 
+    with open('./utils/userAgents.json') as userAgentsFile:
+        userAgents = json.load(userAgentsFile)
+
+    return random.choice(userAgents)
 
 if __name__ == '__main__':
-    print(getCurrentDateTime())
+    print(getRandomUserAgent())

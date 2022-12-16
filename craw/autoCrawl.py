@@ -9,7 +9,7 @@ from coinSumInvestment import UpdateCoinSumInvest
 from investorCoinBalance import updateInvestorERC20Balances, updateInvestorETHBalances
 from investorTotalAsset import investorTotalAssetSnapshot, updateSharkStatus
 from investorTXs import updateInvestorTXs2
-from utils import logExecutionTime, addExecutionTime, refreshCoinSymbol, refreshInvestorAddresses
+from utils import getDateTime,logExecutionTime, addExecutionTime, refreshCoinSymbol, refreshInvestorAddresses, getCurrentDateTime
 
 coingecko1 = [coinPriceMinutelyHandler]
 coingecko2 = [coinDataHandler]
@@ -24,7 +24,8 @@ def executorReplay(function):
 
     while True:
         with concurrent.futures.ThreadPoolExecutor() as replayExecutor:
-            executionTimeFutureResult = replayExecutor.submit(logExecutionTime,function)
+            executionTimeFutureResult = replayExecutor.submit(
+                logExecutionTime, function)
             executionTime = executionTimeFutureResult.result()
             addExecutionTime(function.__name__, executionTime)
         sleepSecs = 600 - executionTime
@@ -32,25 +33,30 @@ def executorReplay(function):
         if sleepSecs <= 0:
             continue
 
+        currentDateTime = getCurrentDateTime()
+        sleepToDateTime = getDateTime(currentDateTime + sleepSecs)
+        print(f'Now sleep for {sleepSecs}, from {currentDateTime} to {sleepToDateTime}')
+
         time.sleep(sleepSecs)
+
 
 def specialTreatment():
     while True:
         with concurrent.futures.ThreadPoolExecutor() as replayExecutor:
-            executionTimeFutureResult = replayExecutor.submit(logExecutionTime,coinPriceMinutelyHandler)
+            executionTimeFutureResult = replayExecutor.submit(
+                logExecutionTime, coinPriceMinutelyHandler)
             executionTime = executionTimeFutureResult.result()
             addExecutionTime(coinPriceMinutelyHandler.__name__, executionTime)
 
-            executionTimeFutureResult = replayExecutor.submit(logExecutionTime,coinDataHandler)
+            executionTimeFutureResult = replayExecutor.submit(
+                logExecutionTime, coinDataHandler)
             executionTime = executionTimeFutureResult.result()
             addExecutionTime(coinDataHandler.__name__, executionTime)
-        
+
+
 if __name__ == '__main__':
 
     with concurrent.futures.ThreadPoolExecutor() as mainExecutor:
-        future_to_functionName = {function.__name__ : mainExecutor.submit(executorReplay,function) for function in zipAll} 
+        future_to_functionName = {function.__name__: mainExecutor.submit(
+            executorReplay, function) for function in zipAll}
         mainExecutor.submit(specialTreatment)
-        
-
-            
- 

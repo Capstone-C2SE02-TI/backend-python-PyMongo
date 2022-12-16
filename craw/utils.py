@@ -5,6 +5,9 @@ import json
 
 def getCurrentDateTime():
     secUnix = time.time()
+    return getDateTime(secUnix)
+
+def getDateTime(secUnix):
     return datetime.fromtimestamp(secUnix).strftime('%d-%m-%Y %H:%M:%S')
 
     

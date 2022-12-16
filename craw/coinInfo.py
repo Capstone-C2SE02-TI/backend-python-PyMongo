@@ -3,10 +3,11 @@ import requests
 import json
 import time
 import concurrent.futures
-from utils import logExecutionTime, addExecutionTime
+from utils import logExecutionTime, addExecutionTime, getRandomUserAgent
 # env variable pre-handler
 from dotenv import load_dotenv
 import os
+from vpn import activeProxiesToJson, getActivateProxiesJson, BlockProxy, addTimeoutProxy, subTimeoutProxy
 load_dotenv()
 
 coinTestDocs = crawlClient['coins']
@@ -60,39 +61,57 @@ def newCoinIdHandler():
         time.sleep(2)
 
 
-def getCoinData(id):
+def getCoinData(id, proxy, timeout):
 
     parameter = {
-        'localization': False,
-        'tickers': False,
-        'market_data': True,
-        'community_data': False,
-        'developer_data': False,
-        'sparkline': False
+        'localization': 'false',
+        'tickers': 'false',
+        'market_data': 'true',
+        'community_data': 'false',
+        'developer_data': 'false',
+        'sparkline': 'false'
     }
+    headers = {'User-Agent': getRandomUserAgent()}
 
     COIN_ID_API_URL = f'https://api.coingecko.com/api/v3/coins/{id}'
 
     statusCode = -1
+    retryTimes = 0
     while statusCode != 200:
+        retryTimes += 1
 
+        if retryTimes >= 3:
+            break
         time.sleep((statusCode != -1) * 70)
 
         print(f'Crawl data for {id}')
-        response = requests.get(COIN_ID_API_URL, params=parameter)
+        try:
+            response = requests.get(COIN_ID_API_URL, params=parameter, headers=headers, proxies={
+                                    'http': proxy, 'https': proxy}, timeout=5)
+        except:
+            print(f'Get {id} data with proxy {proxy} timeout!')
+            addTimeoutProxy(proxy)
+            return {}
 
         statusCode = response.status_code
 
         if statusCode == 404:
             print(f'Dont have data for {id}')
-            break
+            return {}
+
+        if statusCode == 403:
+            print(f'{proxy} got block by coingecko!')
+            BlockProxy(proxy)
+            return {}
+
         if statusCode != 200:
             print('Next time sleep for 70 Secs')
-            print(statusCode)
+            print(statusCode, proxy)
             continue
 
         coinData = response.json()
 
+    subTimeoutProxy(proxy)
     return coinData
 
 
@@ -100,24 +119,41 @@ def coinDataHandler():
 
     projection = {'_id': 1, 'last_updated': 1}
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        for coinDoc in coinTestDocs.find({}, projection):
+    activeProxy_to_timeout = getActivateProxiesJson()
+    activeProxy = [proxy for proxy in activeProxy_to_timeout.keys()]
+    activeProxyLen = activeProxy.__len__()
+    executor = concurrent.futures.ThreadPoolExecutor()
+    for index, coinDoc in enumerate(coinTestDocs.find({}, projection)):
+        idCoin = coinDoc['_id']
+        print(f'Get data of {idCoin}')
 
-            idCoin = coinDoc['_id']
-            print(f'Get data of {idCoin}')
-            coinData = getCoinData(idCoin)
+        proxy = activeProxy[index % activeProxyLen]
+        timeout = activeProxy_to_timeout[proxy]
+        coinData = getCoinData(idCoin, proxy, timeout)
 
-            executor.submit(
-                coinTestDocs.update_one,
-                {'_id': idCoin},
-                {'$set': coinData}
-            )
+        if coinData.get('id', None) != idCoin:
+            print(f'Fuckdup with the {proxy}')
+            activeProxy_to_timeout = getActivateProxiesJson()
+            activeProxy = activeProxy = [
+                proxy for proxy in activeProxy_to_timeout.keys()]
+            activeProxyLen = activeProxy.__len__()
+            continue
 
-            print(f'Get data success of {idCoin}')
-            time.sleep(2)
+        executor.submit(
+            coinTestDocs.update_one,
+            {'_id': idCoin},
+            {'$set': coinData}
+        )
+
+        print(f'Get data success of {idCoin}, with proxy : {proxy}')
+        time.sleep(1)
+
+    executor.shutdown()
 
 
 if __name__ == '__main__':
-    function = coinDataHandler
-    executionTime = logExecutionTime(function)
-    addExecutionTime(coinDataHandler, executionTime)
+    activeProxiesToJson()
+    coinDataHandler()
+    # function = coinDataHandler
+    # executionTime = logExecutionTime(function)
+    # addExecutionTime(function.__name__, executionTime)

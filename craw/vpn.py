@@ -130,7 +130,7 @@ def addTimeoutProxy(proxy):
     proxyTimeout = activateProxies[proxy]
     newProxyTimeout = proxyTimeout + 5
 
-    if newProxyTimeout >= 100:
+    if newProxyTimeout >= 60:
         BlockProxy(proxy)
         return
 

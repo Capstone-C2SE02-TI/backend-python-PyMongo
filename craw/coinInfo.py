@@ -61,7 +61,7 @@ def newCoinIdHandler():
         time.sleep(2)
 
 
-def getCoinData(id, proxy):
+def getCoinData(id, proxy, timeout):
 
     parameter = {
         'localization': 'false',
@@ -111,6 +111,7 @@ def getCoinData(id, proxy):
 
         coinData = response.json()
 
+    subTimeoutProxy(proxy)
     return coinData
 
 
@@ -127,7 +128,8 @@ def coinDataHandler():
         print(f'Get data of {idCoin}')
 
         proxy = activeProxy[index % activeProxyLen]
-        coinData = getCoinData(idCoin, proxy)
+        timeout = activeProxy_to_timeout[proxy]
+        coinData = getCoinData(idCoin, proxy, timeout)
 
         if coinData.get('id', None) != idCoin:
             print(f'Fuckdup with the {proxy}')
@@ -144,7 +146,6 @@ def coinDataHandler():
         )
 
         print(f'Get data success of {idCoin}, with proxy : {proxy}')
-        subTimeoutProxy(proxy)
         time.sleep(1)
 
     executor.shutdown()

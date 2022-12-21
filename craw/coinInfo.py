@@ -7,7 +7,7 @@ from utils import logExecutionTime, addExecutionTime, getRandomUserAgent
 # env variable pre-handler
 from dotenv import load_dotenv
 import os
-from vpn import activeProxiesToJson, getActivateProxiesJson, BlockProxy, addTimeoutProxy, subTimeoutProxy
+from vpn import fullCycle, getActivateProxiesJson, BlockProxy, addTimeoutProxy, subTimeoutProxy
 load_dotenv()
 
 coinTestDocs = crawlClient['coins']
@@ -87,7 +87,7 @@ def getCoinData(id, proxy, timeout):
         print(f'Crawl data for {id}')
         try:
             response = requests.get(COIN_ID_API_URL, params=parameter, headers=headers, proxies={
-                                    'http': proxy, 'https': proxy}, timeout=5)
+                                    'http': proxy, 'https': proxy}, timeout=timeout)
         except:
             print(f'Get {id} data with proxy {proxy} timeout!')
             addTimeoutProxy(proxy)
@@ -123,7 +123,7 @@ def coinDataHandler():
     activeProxy = [proxy for proxy in activeProxy_to_timeout.keys()]
     activeProxyLen = activeProxy.__len__()
     executor = concurrent.futures.ThreadPoolExecutor()
-    for index, coinDoc in enumerate(coinTestDocs.find({}, projection)):
+    for index, coinDoc in enumerate(coinTestDocs.find({}, projection, batch_size = 5)):
         idCoin = coinDoc['_id']
         print(f'Get data of {idCoin}')
 
@@ -146,13 +146,13 @@ def coinDataHandler():
         )
 
         print(f'Get data success of {idCoin}, with proxy : {proxy}')
-        time.sleep(1)
+        time.sleep(0.1)
 
     executor.shutdown()
 
 
 if __name__ == '__main__':
-    activeProxiesToJson()
+    fullCycle()
     coinDataHandler()
     # function = coinDataHandler
     # executionTime = logExecutionTime(function)

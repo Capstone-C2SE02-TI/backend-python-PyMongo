@@ -69,7 +69,6 @@ def getActivateProxiesFromWeb():
             continue
 
         activateProxies.append(proxy)
-
     return activateProxies
 
 def activeProxiesRemove(proxy):
@@ -98,20 +97,33 @@ def BlockProxy(proxy):
     with open('./utils/blockProxies.json', 'w') as outfile:
         outfile.write(json_object)
 
+def LowProxy(proxy):
+    with open('./utils/lowProxies.json', 'r') as lowProxiesFile:
+        lowProxies = json.load(lowProxiesFile)
+
+    if proxy not in lowProxies:
+        lowProxies.append(proxy)
+        activeProxiesRemove(proxy)
+        
+    json_object = json.dumps(lowProxies, indent=4)
+
+    with open('./utils/lowProxies.json', 'w') as outfile:
+        outfile.write(json_object)
+
 def getActivateProxiesJson():
     with open('./utils/activeProxies.json', 'r') as activeProxiesFile:
         activateProxies = json.load(activeProxiesFile)
 
     return activateProxies
 
-def activeProxiesToJson():
+def activeProxiesToJson(newActivateProxies):
 
     with open('./utils/activeProxies.json', 'r') as activeProxiesFile:
         activateProxies = json.load(activeProxiesFile)
 
     with open('./utils/blockProxies.json', 'r') as blockProxiesFile:
         blockProxies = json.load(blockProxiesFile)
-    newActivateProxies = getActivateProxiesFromWeb()
+        
     print(newActivateProxies)
     for proxy in newActivateProxies:
         if (proxy not in activateProxies) and (blockProxies not in blockProxies):
@@ -130,8 +142,8 @@ def addTimeoutProxy(proxy):
     proxyTimeout = activateProxies[proxy]
     newProxyTimeout = proxyTimeout + 5
 
-    if newProxyTimeout >= 60:
-        BlockProxy(proxy)
+    if newProxyTimeout >= 20:
+        LowProxy(proxy)
         return
 
     activateProxies[proxy] = newProxyTimeout
@@ -156,9 +168,17 @@ def subTimeoutProxy(proxy):
     with open('./utils/activeProxies.json', 'w') as outfile:
         outfile.write(json_object)
 
+
+def fullCycle():
+    newProxies = []
+
+    newProxies += getProxies()
+
+    activeProxiesToJson(newProxies)
+
 if __name__ == '__main__':
-    activeProxiesToJson()
-    
+    # print(getActivateProxiesFromWeb())
+    LowProxy("102.130.192.231:8080")
     # BlockProxy('3.90.130.193:80')
 
     

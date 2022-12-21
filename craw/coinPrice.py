@@ -109,7 +109,7 @@ def coinPriceHandler():
                 priceUpdate[f'prices.{interval}.{secondUnix}'] = price
 
             # NOTE 7.5 sec mean 8 quest in 1 minutes + 30 quest in otherside is 38
-            time.sleep(7.5)
+            time.sleep(2)
             
 
         coinTestDocs.update_one(

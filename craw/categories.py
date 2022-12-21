@@ -1,11 +1,11 @@
-from mongoDB_init import client
+from mongoDB_init import crawlClient
 import requests
 import json
 import time
 
 
-categoryDocs = client['categories']
-coinDocs = client['coins']
+categoryDocs = crawlClient['categories']
+coinDocs = crawlClient['coins']
 
 def initCategoryMetadata():
 

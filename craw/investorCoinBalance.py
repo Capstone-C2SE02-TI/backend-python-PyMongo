@@ -98,6 +98,7 @@ def updateInvestorETHBalances(maxWorkers = 5):
                 {'$set' : {'coins.eth' : ETHBalance} }
             )    
     return True
+    
 
 
 def convertDecimal(value, decimalFrom, decimalTo=0):

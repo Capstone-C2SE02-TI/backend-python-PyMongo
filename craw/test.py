@@ -1,9 +1,6 @@
-from mongoDB_init import crawlClient
-from pprint import pprint
-investorDocs = crawlClient['investors']
+import requests
+
+q = requests.get("https://static.packt-cdn.com/downloads/9781801075541_ColorImages.pdf")
 
 
-for coinDoc in investorDocs.find({},{'coins' : 1}):
-    pprint(coinDoc)
-
-    break
+print(q.text)

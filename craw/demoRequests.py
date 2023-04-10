@@ -19,3 +19,4 @@ COIN_ID_API_URL = f'https://api.coingecko.com/api/v3/coins/{id}'
 response = requests.get(COIN_ID_API_URL, params=parameter)
 # Các method ở đây có thể là : 
 methods = ['GET', 'POST', 'PUT', 'PATCH']
+

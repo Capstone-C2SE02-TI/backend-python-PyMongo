@@ -95,6 +95,10 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
         return {'status': '-1'}
 
     # print(f'Crawling new TXs of {investorAddress} successfully')
+    # Cycle is revert to old tx
+    # Find all pair in uni,pancake
+    # All pair in testnet
+    # API to show that pair
     return newTXs
 
 

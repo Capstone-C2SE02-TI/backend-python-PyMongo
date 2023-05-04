@@ -70,7 +70,8 @@ def getInvestorTXs(startBlock, curBlock, ets_key, investorAddress):
     pages = 1
     offset = 10000
     try:
-        newTXs = requests.get('https://api.etherscan.io/api?module=account&action=txlist&'
+        newTXs = requests.get('https://api.etherscan.io/api?module=account&'
+                              'action=tokentx&'
                               f'address={investorAddress}&'
                               f'page={pages}&'
                               f'offset={offset}&'
@@ -219,5 +220,6 @@ def updateInvestorTXs2(maxWorkers=5):
 
 if __name__ == '__main__':
 
-    # print(getTransactionInput("0x109d85c1ef5204aa0e389ac8306f9761e5e7ca10022db9bb499a5a9a2be7676a", mainnet=True))
-    pass
+    # resetInvestorTXs()
+    # setLatestBlockNumber()
+    updateInvestorTXs2()

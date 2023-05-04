@@ -1,22 +1,38 @@
 import json
 
+import json
+from mongoDB_init import crawlClient
 
-with open('data.json', 'r', encoding='utf-8') as f:
+investorDocs = crawlClient['investors']
 
-    # json.dump(counter, f, ensure_ascii=False, indent=4)
+addresses = investorDocs.distinct('_id')
 
-    datas = json.load(f)
+for address in addresses:
+    la = address.lower()
 
+    if la == '0x72598E10eF4c7C0E651f1eA3CEEe74FCf0A76CF2'.lower():
 
-myKeys = list(datas.keys())
-myKeys.sort()
-sorted_dict = {i: datas[i] for i in myKeys}
- 
-with open('dataKeySorted.json', 'w', encoding='utf-8') as f:
+        print('halo')
+projection = {'TXs': 1}
+for investorDoc in investorDocs.find({}, projection, batch_size=1, limit=2):
 
-    json.dump(sorted_dict, f, ensure_ascii=False, indent=4)
+    TXs = investorDoc['TXs']
+    _id = investorDoc['_id']
+    counter = {}
 
-sorted_value_dict = dict(sorted(datas.items(), key=lambda item: item[1], reverse=True))
-with open('dataValueSorted.json', 'w', encoding='utf-8') as f:
+    print(_id)
+    for tx in TXs:
+        if 'contractAddress' not in tx:
+            continue
 
-    json.dump(sorted_value_dict, f, ensure_ascii=False, indent=4)
+        if tx['contractAddress'] in counter:
+            continue
+
+        counter[tx['contractAddress']] = {
+            'tokenName': tx['tokenName'],
+            'tokenSymbol': tx['tokenSymbol']
+        }
+    investorDocs.update_one(
+        {'_id': _id},
+        {'$set': {'pair_tradings': counter}}
+    )

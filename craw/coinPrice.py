@@ -92,7 +92,7 @@ def coinPriceHandler():
     # intervals = ['daily', 'hourly', 'minutely']
     # dayss = ['max', '90', '1']
     intervals = ['daily', 'hourly']
-    dayss = ['1', '1']
+    dayss = ['max', '90']
 
     coinIds = [coinDoc['_id'] for coinDoc in coinTestDocs.find({}, {'_id': 1})]
     for coinId in coinIds:
@@ -163,7 +163,7 @@ def coinPriceMinutelyHandler():
 
 
 if __name__ == '__main__':
-    function = coinPriceMinutelyHandler
+    function = coinPriceHandler
     logExecutionTime(function)
 # for unix,price in getCoinPriceByRange('bitcoin','1669255913','1669341913'):
 #     ts = int(unix/1000)

@@ -21,8 +21,11 @@ mainClient = pymongo.MongoClient(main_connect_string)
 mainClient = mainClient['TRACKINGINVESTMENT_MAIN']
 
 
-
-
+mongodb_main2_password = os.environ['mongodb_main2_password']
+mongodb_main2_password = quote_plus(mongodb_main2_password)
+connect_string = f'mongodb+srv://thanhtuanhuynh0011:{mongodb_main2_password}@cluster0.vshugfj.mongodb.net/TRACKSCAN?retryWrites=true&w=majority'
+main2Client = pymongo.MongoClient(connect_string)
+main2Client = main2Client['TRACKSCAN']
 
 
 

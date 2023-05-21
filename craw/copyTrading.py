@@ -28,7 +28,7 @@ for userDoc in userDocs.find(findFilter, projection):
 
         # print(hashBody)
         hashResponse = requests.post(
-            "http://127.0.0.1:8000/copyTrading/hash", data=hashBody)
+            "http://127.0.0.1:8080/copyTrading/hash", data=hashBody)
 
         if hashResponse.json()["message"] != "Success":
             print("Copy Trading fail")
@@ -46,10 +46,10 @@ for userDoc in userDocs.find(findFilter, projection):
 
         print(autoTradingBody)
         autoTradingResponse = requests.post(
-            "http://127.0.0.1:8000/copyTrading/auto", data=autoTradingBody)
+            "http://127.0.0.1:8080/copyTrading/auto", data=autoTradingBody)
         print(autoTradingResponse.text)
 
-        time.sleep(1)
+        time.sleep(3)
         # TODO danh dau transaction da duoc copy
 
 
